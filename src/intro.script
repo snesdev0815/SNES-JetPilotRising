@@ -1,0 +1,246 @@
+
+  SCRIPT intro
+
+  .redef obj.layer0 hashPtr.1
+  .redef obj.layer1 hashPtr.2
+  .redef obj.hdma.window hashPtr.3
+  .redef obj.vwf hashPtr.4
+  .redef obj.parser hashPtr.5
+  .redef obj.brightnessGradient hashPtr.6
+  .redef obj.sprite hashPtr.7
+
+  .redef obj.brightness this._tmp
+  .redef obj.fixedColor this._tmp+4
+  .redef obj.bgColor this._tmp+8
+
+
+  ;kill all other scripts first
+  lda.w #OBJECT.PROPERTIES.isScript
+  SCRIPT_JSR iterator.library.killOthers
+
+  ;disgusting hack to kill orphan level objects manually
+  lda.w #sprite.rocket.CLS.PTR
+  SCRIPT_JSR iterator.library.kill.byId
+
+  lda.w #level.generic.CLS.PTR
+  SCRIPT_JSR iterator.library.kill.byId
+
+  SCRIPT_JSR core.screen.blur
+
+  ;acquire bg color first
+  SCRIPT_NEW palette.bgcolor.CLS.PTR obj.bgColor PALETTE.black.PTR
+
+  SCRIPT_NEW Brightness.CLS.PTR obj.brightness
+  lda.w #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.set.MTD obj.brightness
+ 
+  SCRIPT_NEW fixedColor.CLS.PTR obj.fixedColor
+  lda.w #FIXED_COLOR.BLACK
+  SCRIPT_CALL fixedColor.set.MTD obj.fixedColor
+
+  sep #$20
+  lda.b #(BGMODE_MODE_1 | BGMODE_PRIORITY_LAYER_3)
+  sta.w ScreenMode
+  lda.w MainScreen
+  and.b #(T_BG1_ENABLE | T_BG2_ENABLE | T_BG3_ENABLE | T_BG4_ENABLE) ~$ff
+  ora.b #T_OBJ_ENABLE
+  sta.w MainScreen
+
+  stz.w SubScreen
+
+  lda #(CGWSEL_CLIP_COL_NEVER | CGWSEL_NO_COL_MATH_NEVER)
+  sta.w colorAdditionSelect
+
+  stz.w CgadsubConfig
+  rep #$31
+
+
+  ldx #0
+  ldy #0
+  SCRIPT_JSR core.screen.setPosition
+
+  pea 512
+  pea 512
+  pea 0
+  pea 0
+  SCRIPT_JSR core.screen.setPlayfieldBorder
+  pla
+  pla
+  pla
+  pla
+
+  lda.w #Song.intro.PTR
+  SCRIPT_JSR core.audio.playSong
+
+  ;make this part skippable
+  SCRIPT_NEW introstart.CLS.PTR VOID
+
+
+;***********************************
+; intro scene 2, dieter von laser
+;***********************************
+_intro.scene2:
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.vonLaser.packed.PTR 0 0 BG.LAYER.0
+
+  lda #BRIGHTNESS.FULL
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SAVE
+
+  ;wait for some time
+  SLEEP 120
+
+  lda.w #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SAVE
+
+  SCRIPT_CALL Brightness.isDone.MTD obj.brightness
+  bcs +
+    rts
+
++
+
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
+
+;***********************************
+; intro scene 3, poem
+;***********************************
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.poem.bg.packed.PTR 0 0 BG.LAYER.1
+
+  SCRIPT_NEW_TRY background.textlayer.vwf.CLS.PTR obj.vwf $3000 BG.LAYER.2 0 0
+
+  pei (obj.vwf)
+  pei (obj.vwf+2)
+  SCRIPT_NEW vwf.parser.CLS.PTR obj.parser
+  pla
+  pla
+
+
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+      rts
+
++
+  ;draw text
+  pea VOID
+  pea 48
+  pea 12
+  pea 240
+  pea FONT.big_2bpp.PTR
+  pea text.dialogue.poem
+  SCRIPT_CALL vwf.parser.print.MTD obj.parser
+  pla
+  pla
+  pla
+  pla
+  pla
+  pla
+
+  ;wait for print complete
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+    rts
+
++
+
+  ;draw text
+  pea VOID
+  pea 96
+  pea 12
+  pea 240
+  pea FONT.big_2bpp.PTR
+  pea text.dialogue.poem2
+  SCRIPT_CALL vwf.parser.print.MTD obj.parser
+  pla
+  pla
+  pla
+  pla
+  pla
+  pla
+
+  ;wait for print complete
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+    rts
+
++
+  SCRIPT_NEW hdma.brightness.CLS.PTR obj.brightnessGradient
+
+  lda #BRIGHTNESS.FULL
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SCRIPT_CALL Background.generic.setPosition.MTD obj.layer0 0 (192 ~$ffff) 0
+
+  SAVE
+
+  ;wait for some time while drawing text and scrolling cat bg
+  LOOP 700
+    SCRIPT_CALL Background.generic.translate.MTD obj.layer0 0 40 0
+  LOOP
+
+  lda.w #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SAVE
+
+  SCRIPT_CALL Brightness.isDone.MTD obj.brightness
+  bcs +
+    rts
+
++
+
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL background.textlayer.vwf.kill.MTD obj.vwf
+  SCRIPT_CALL vwf.parser.kill.MTD obj.parser
+  SCRIPT_CALL hdma.brightness.kill.MTD obj.brightnessGradient
+
+;***********************************
+; title screen
+;***********************************
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.logo.packed.PTR 0 0 BG.LAYER.0
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer1 0 0 BG.logo.bg.packed.PTR 0 0 BG.LAYER.1  
+
+  SCRIPT_NEW hdma.brightness.CLS.PTR obj.brightnessGradient
+
+  lda #BRIGHTNESS.FULL
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SCRIPT_CALL Background.generic.setPosition.MTD obj.layer0 0 (210 ~$ffff) 0
+
+
+  SLEEP 120
+
+
+  ;logo comes falling down
+  LOOP 25
+    SCRIPT_CALL Background.generic.translate.MTD obj.layer0 0 2000 0
+  LOOP
+
+  SCRIPT_NEW level.screen.shake.CLS.PTR VOID 0 0 0 0 $f 1
+
+  LOOP 600
+    ldx #0
+    ldy #0
+    SCRIPT_JSR core.screen.setPosition
+  LOOP
+
+  lda.w #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SAVE
+
+  SCRIPT_CALL Brightness.isDone.MTD obj.brightness
+  bcs +
+    rts
+
++
+
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer1
+  SCRIPT_CALL hdma.brightness.kill.MTD obj.brightnessGradient
+
+  jmp _intro.scene2

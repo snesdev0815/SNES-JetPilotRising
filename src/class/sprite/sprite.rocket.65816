@@ -1,0 +1,564 @@
+/**
+* Generic animated sprite with single animation file 
+* 
+* @param 1<int, 16bit>  x-pos
+* @param 2<int, 16bit>  y-pos
+* @param 3<int, 16bit>  x-size
+* @param 4<int, 16bit>  y-size
+* @param 5<int, 16bit>  controller id
+*/
+.include "src/class/sprite/sprite.rocket.h"
+.section "sprite.rocket"
+
+  METHOD init
+  lda OBJECT.CALL.ARG.1,s
+  sta.b dimension.position.x + 1
+  sta.b this.buffer.x
+
+  lda OBJECT.CALL.ARG.2,s
+  sta.b dimension.position.y + 1
+  sta.b this.buffer.y
+
+  lda.w #SPRITE.ROCKET.DEFAULT.LIFES
+  sta.b this.lifes
+
+  lda OBJECT.CALL.ARG.5,s
+  sta.b this.controller.id
+
+  lda.w #16
+  sta dimension.collision.diameter
+
+  jmp _initRocket
+
+
+_initRocket:
+  lda.b this.buffer.x
+  sta.b dimension.position.x + 1
+  eor.w #$ffff
+  sta dimension.position.last.x
+
+  lda.b this.buffer.y
+  sta.b dimension.position.y + 1
+  eor.w #$ffff
+  sta dimension.position.last.y
+
+  lda #SPRITE.ROCKET.ANGLE.DEFAULT
+  sta this.angle
+
+  stz this.age
+
+  lda.w #(ANIMATION.FLAGS.IS_LOOPING | ANIMATION.FLAGS.IS_COLOR_MATH)
+  tsb animation.flags.static
+
+
+  lda.w #OAM.PRIORITY.2
+  sta animation.buffer.flags
+  
+  lda #SPRITE.rocket.PTR
+  jsr sprite.library.startAnimation
+
+  lda #0
+  sta.b animation.speed
+
+  ;set bg collision basepoint
+  lda dimension.size.x
+  lsr a
+  sta dimension.collision.basepoint.x
+
+  lda dimension.size.y
+  lsr a
+  sta dimension.collision.basepoint.y
+
+  lda.w #SPRITE.ROCKET.STATE.STANDING
+  sta this.state
+
+  jsr _updateTile
+
+  ;focus on self
+  pei (iterator.self)
+  pei (iterator.self + 2)
+  jsr core.screen.focus.immediate
+  pla
+  pla
+
+  ;hack to make sure palette gets uploaded
+  jmp sprite.library.playAnimation
+
+  METHOD pause
+  jmp sprite.library.pauseAnimation
+
+  METHOD play
+  inc this.age
+  lda this.state
+  asl a
+  tax
+  jsr (_state.lut,x)
+  bcs +
+    jmp _kill
+
++
+  ldx #this.hdma
+  jsr core.object.exists
+  bcc +
+    CALL hdma.windowMaskAnimation.isDone.MTD this.hdma
+    bcc +
+      CALL hdma.windowMaskAnimation.kill.MTD this.hdma
+
++
+  rts
+
+_state.lut:
+  .dw _state.standing
+  .dw _state.flying
+  .dw _state.exploding
+
+_state.exploding:
+  AX16
+  lda this.age
+  cmp #30
+  bcc +
+    ;loose life
+    dec this.lifes
+    lda this.lifes
+    bmi ++
+      ;restart from last buffer (typically level start)
+
+      ;tell level to reload objects
+      NEW_TRY level.generic.CLS.PTR this.level
+      TRY level.generic.resetObjects.MTD this.level
+
+      jsr _initRocket
+      bra +
+
+++
+    ;game over
+    clc
+    rts
+
++
+  sec
+  rts
+
+
+_state.standing:
+  AX16
+  lda this.angle
+  cmp #SPRITE.ROCKET.ANGLE.TOP
+  beq ++
+    ;erect
+    lda this.angle
+    dec a
+    and.w #$ff
+    sta this.angle
+    bra +
+    
+
+++
+    ;start if button pressed and rocket erected
+    ldx this.controller.id
+    jsr core.input.get.trigger
+    and.w #(JOY_BUTTON_A | JOY_BUTTON_B | JOY_BUTTON_X | JOY_BUTTON_Y)
+    beq +
+      lda.w #SPRITE.ROCKET.STATE.FLYING
+      sta this.state
+
+      NEW_TRY level.screen.shake.CLS.PTR VOID 0 0 0 0 6 3
+
+      pea 0
+      pea 3
+      pea SPRITE.effect.explosion.PTR
+      lda dimension.position.y+1
+      clc
+      adc dimension.collision.basepoint.y
+      sec
+      sbc #SPRITE.ROCKET.EXHAUST.Y
+      pha
+      lda dimension.position.x+1
+      clc
+      adc dimension.collision.basepoint.x
+      sec
+      sbc #SPRITE.ROCKET.EXHAUST.X+8
+      pha
+      NEW_TRY sprite.once.CLS.PTR VOID
+      pla
+      pla
+      pla
+      pla
+      pla
+
+      lda.w #AUDIO.EFFECT.ROCKET_START
+      jsr interface.dimension.playSoundEffect
+
++
+
+  jsr _setFrame
+  sec
+  rts
+
+
+_state.flying:
+  AX16
+  ;ascend if button pressed
+  ldx this.controller.id
+  jsr core.input.get.press
+  and.w #(JOY_BUTTON_A | JOY_BUTTON_B | JOY_BUTTON_X | JOY_BUTTON_Y)
+  beq +
+    lda this.angle
+    sec
+    sbc #SPRITE.ROCKET.ASCEND.RATE
+    and.w #$ff
+    cmp #SPRITE.ROCKET.ANGLE.BOTTOM
+    bcc ++
+    cmp #SPRITE.ROCKET.ANGLE.TOP
+    bcs ++
+      lda #SPRITE.ROCKET.ANGLE.TOP
+
+++
+    sta this.angle
+
+
++
+  ;slowly descend
+  lda this.angle
+  clc
+  adc #SPRITE.ROCKET.DESCENT.RATE
+  and.w #$ff
+  cmp #SPRITE.ROCKET.ANGLE.TOP
+  bcs +
+  cmp #SPRITE.ROCKET.ANGLE.BOTTOM
+  bcc +
+    lda #SPRITE.ROCKET.ANGLE.BOTTOM
+
++
+  sta this.angle
+
+  jsr _setFrame
+
+  jsr entity.angle.apply
+
+  ;update current tile if moved
+  pea 0
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  lsr a
+  lsr a
+  lsr a
+  sta 1,s
+  lda dimension.position.last.y
+  clc
+  adc dimension.collision.basepoint.y
+  lsr a
+  lsr a
+  lsr a
+  cmp 1,s
+  bne ++
+
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  lsr a
+  lsr a
+  lsr a
+  sta 1,s
+  lda dimension.position.last.x
+  clc
+  adc dimension.collision.basepoint.x
+  lsr a
+  lsr a
+  lsr a
+  cmp 1,s
+  beq +
+
+++
+
+  jsr _updateTile
++
+  pla
+
+  ;check for exit
+  lda.w FrameCounter
+  and.w #$f
+  bne +
+    lda dimension.collision.basepoint.x
+    clc
+    adc dimension.position.x+1
+    tax
+
+    lda dimension.collision.basepoint.y
+    clc
+    adc dimension.position.y+1
+    tay
+    lda.w #level.exit.CLS.PTR
+    jsr collision.library.fromPoint.toBox.byId
+    bcc +
+      CALL level.exit.tryExit.MTD iterator.target
+      bcc +
+        lda.w #AUDIO.EFFECT.MEOW
+        jsr interface.dimension.playSoundEffect
+
++  
+  ;keep last position
+  lda dimension.position.y+1
+  sta dimension.position.last.y
+  lda dimension.position.x+1
+  sta dimension.position.last.x
+
+  ;die if background hit
+  lda this.collision.tile
+  and.w #LEVEL.COLLISION.MODE.MASK
+  cmp.w #LEVEL.COLLISION.MODE.HURT
+  bne +
+    jsr _explode
+
++
+  lda animation.timer
+  and.w #$7
+  bne +
+    ;collect coin if hit
+    lda #(OBJECT.PROPERTIES.isCollidable | OBJECT.PROPERTIES.isItem)
+
+    jsr collision.library.fromBox.toBox.byProperties
+    bcc +
+      CALL sprite.coin.collect.MTD iterator.target
+
+      inc this.coins
+      lda this.coins
+      cmp #SPRITE.ROCKET.COINS_PER_LIFE
+      bcc ++
+        stz this.coins
+        
+        lda this.lifes
+        inc a
+        cmp #SPRITE.ROCKET.MAX.LIFES
+        bcc +++
+          lda.w #SPRITE.ROCKET.MAX.LIFES
+
++++
+        sta this.lifes
+
+        lda.w #AUDIO.EFFECT.MEOW
+        jsr interface.dimension.playSoundEffect
+
+        bra +
+
+++
+      lda.w #AUDIO.EFFECT.COIN
+      jsr interface.dimension.playSoundEffect
+
+
++
+
+  lda animation.timer
+  clc
+  adc.w #$3
+  and.w #$7
+  bne +
+    ;die if enemy hit
+    lda #(OBJECT.PROPERTIES.isCollidable | OBJECT.PROPERTIES.isLifeform | OBJECT.PROPERTIES.isEnemy)
+    jsr collision.library.fromDiameter.toDiameter.byProperties
+    bcc +
+      jsr _explode
+
++
+  lda animation.timer
+  and.w #$7
+  bne +
+      pea 0
+      pea 3
+      pea SPRITE.effect.explosion.PTR
+      lda dimension.position.y+1
+      clc
+      adc dimension.collision.basepoint.y
+      sec
+      sbc #SPRITE.ROCKET.EXHAUST.Y
+      pha
+      lda dimension.position.x+1
+      clc
+      adc dimension.collision.basepoint.x
+      sec
+      sbc #SPRITE.ROCKET.EXHAUST.X
+      pha
+      NEW_TRY sprite.once.CLS.PTR VOID
+      pla
+      pla
+      pla
+      pla
+      pla
+
++
+  sec
+  rts
+
+_setFrame:
+  AX16
+  ;set current frame
+  lda this.angle
+  and.w #$ff
+  lsr a
+  lsr a
+  lsr a
+
+  sta.b animation.frame.current
+  dec a
+  sta.b animation.frame.last
+  jmp sprite.library.playAnimation
+
+_explode:
+    AX16
+    NEW_TRY level.screen.shake.CLS.PTR VOID 0 0 0 0 10 3
+
+    lda.w #AUDIO.EFFECT.ROCKET_EXPLOSION
+    jsr interface.dimension.playSoundEffect
+
+    lda.w #SPRITE.ROCKET.STATE.EXPLODING
+    sta this.state
+
+    pea 0
+    pea 3
+    pea SPRITE.effect.explosion.small.PTR
+      lda dimension.position.y+1
+      clc
+      adc dimension.collision.basepoint.y
+      sec
+      sbc #20
+      pha
+      lda dimension.position.x+1
+      clc
+      adc dimension.collision.basepoint.x
+      sec
+      sbc #20
+      pha
+
+    NEW_TRY sprite.once.CLS.PTR VOID
+    pla
+    pla
+    pla
+    pla
+    pla
+
+    stz this.age
+    rts
+
+_updateTile:
+  AX16
+  ;get current tile
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  pha
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  pha
+
+  jsr level.library.getCollisionTile
+  sta this.collision.tile
+  pla
+  pla
+  rts
+
+entity.angle.apply:
+  AX16
+  ;calculate displacement, x
+  lda this.angle
+  and.w #$ff
+  jsr core.math.cos
+  asl a
+  asl a
+  bmi +
+    clc
+    adc dimension.position.x
+    sta dimension.position.x
+    lda dimension.position.x +2
+    adc #0
+    sta dimension.position.x +2
+    bra ++
++
+    clc
+    adc dimension.position.x
+    sta dimension.position.x
+    lda dimension.position.x +2
+    sbc #0
+    sta dimension.position.x +2
+
+++
+
+
+  ;calculate displacement, y
+  lda this.angle
+  and.w #$ff
+  jsr core.math.sin
+  asl a
+  asl a
+  bmi +
+    clc
+    adc dimension.position.y
+    sta dimension.position.y
+    lda dimension.position.y +2
+    adc #0
+    sta dimension.position.y +2
+    bra ++
++
+    clc
+    adc dimension.position.y
+    sta dimension.position.y
+    lda dimension.position.y +2
+    sbc #0
+    sta dimension.position.y +2
+
+++
+  rts
+
+  METHOD kill
+  ldx #this.hdma
+  jsr core.object.exists
+  bcc +
+      CALL hdma.windowMaskAnimation.kill.MTD this.hdma
+
++
+  jmp sprite.library.kill  
+
+
+  METHOD getLifeCount
+  lda this.lifes
+  rts
+
+  METHOD setPosition
+  jmp _initRocket
+
+  METHOD oncommand
+  lda OBJECT.CALL.ARG.1,s
+  cmp.w #LIFEFORM.COMMAND.GET_CAMERA_DATA
+  bne +
+    jmp lifeform.library.getCameraData
+    
++
+  clc
+  rts
+
+  CLASS sprite.rocket oncommand getLifeCount
+
+lifeform.library.getCameraData:
+  AX16
+  jsr interface.dimension.getCollisionBasepoint
+
+  lda dimension.direction
+  and.w #$7
+  pha
+  lda.w #SCREEN.BOUNDARY.GROUNDED
+  asl a
+  asl a
+  asl a
+  asl a
+  ora 1,s
+  sta 1,s
+  pla
+  sec
+  rts
+
+
+  CLASS lifeform.library oncommand
+
+.ends	
+	

@@ -1,0 +1,24 @@
+/**
+* HDMA table file includes
+*
+*/
+
+.Section "HdmaAnimationLUT" superfree
+HdmaAnimationLUT:
+  PTRLONG HdmaAnimationLUT HDMA.fade_in
+  PTRLONG HdmaAnimationLUT HDMA.fade_out
+  PTRLONG HdmaAnimationLUT HDMA.level1
+  PTRLONG HdmaAnimationLUT HDMA.level2
+  PTRLONG HdmaAnimationLUT HDMA.level3
+  PTRLONG HdmaAnimationLUT HDMA.level4
+  PTRLONG HdmaAnimationLUT HDMA.level4_eyes
+
+.ends   
+
+  HDMA_WINDOW_ANIMATION fade_in
+  HDMA_WINDOW_ANIMATION fade_out
+  HDMA_PALETTE_ANIMATION level1
+  HDMA_PALETTE_ANIMATION level2
+  HDMA_PALETTE_ANIMATION level3
+  HDMA_PALETTE_ANIMATION level4
+  HDMA_PALETTE_ANIMATION level4_eyes

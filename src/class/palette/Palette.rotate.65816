@@ -1,0 +1,348 @@
+/**
+* palette rotator
+*/
+.include "src/class/palette/Palette.rotate.h"
+.section "Palette.rotate"
+
+  /**
+  * @param arg.1 <int, 16bit>    color start id
+  * @param arg.2 <int, 16bit>    color count
+  * @param arg.3 <int, 16bit>    delay (0=fastest)
+  * @param arg.4 <int, 16bit>    decay rate (0=none)
+  */
+  METHOD init
+  lda OBJECT.CALL.ARG.1,s
+  sta palette.color.start
+  lda OBJECT.CALL.ARG.2,s
+  sta palette.color.length
+  lda OBJECT.CALL.ARG.3,s
+  sta this.delay
+  lda OBJECT.CALL.ARG.4,s
+  sta this.decay
+  lda #3
+  jsr palette.library.init
+  stz this.state
+  rts
+
+
+_stateLUT:
+  .dw _wait
+  .dw _wait
+  .dw _prime
+  .dw _rotate
+
+_wait:
+  inc this.state
+  rts
+
+_prime:
+  .accu 16
+  lda palette.ramBuffer.start
+  clc
+  adc palette.color.length
+  clc
+  adc palette.color.length
+  pha   ;target write adress
+
+  lda #0
+-
+    jsr _blendPalette
+    inc a
+    cmp #PALETTE.ROTATE.BLEND_STEPS
+    bcc -
+
+  pla
+  inc this.state
+  rts
+
+
+_blendPalette:
+  .accu 16
+  pha
+
+  ldy #0
+  ldx palette.ramBuffer.start
+-
+    lda.w GLOBAL.wramBuffer.start,x
+    pha
+    inx
+    inx
+    tya
+    inc a
+    cmp palette.color.length
+    bne +
+      ;last entry? wrap around to first
+      asl a
+      pha
+      txa
+      sec
+      sbc 1,s
+      tax
+      pla
+
++
+    lda.w GLOBAL.wramBuffer.start,x
+    pha
+    jsr _blendColor
+
+    ;save color
+    pha
+    phx
+      
+    lda 9,s
+    tax
+    inc a
+    inc a
+    sta 9,s
+    lda 3,s
+    sta.w GLOBAL.wramBuffer.start,x
+
+    plx
+    pla
+
+    pla
+    pla
+
+    iny
+    cpy palette.color.length
+    bcc -
+
+  pla
+  rts
+
+/*
+2,s second color
+4,s first color
+8,s blend level
+
+for r,g,b:
+  get first color
+  get difference to second color
+  multiply first color by total number of steps
+  multiply second color by current step
+    
+*/
+_blendColor:
+  phx
+  phy
+
+  pea 0
+  lda 4+7,s
+  and.w #%11111
+  tax
+  lda 2+7,s
+  and.w #%11111
+  tay
+  lda 6+7,s
+  jsr 0
+  ora 1,s
+  sta 1,s
+
+  lda 4+7,s
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  and.w #%11111
+  tax
+  lda 2+7,s
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  and.w #%11111
+  tay
+  lda 6+7,s
+  jsr _blendChannel
+  asl a
+  asl a
+  asl a
+  asl a
+  asl a
+  ora 1,s
+  sta 1,s
+
+  lda 4+7,s
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  and.w #%11111
+  tax
+  lda 2+7,s
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  and.w #%11111
+  tay
+  lda 6+7,s
+  jsr _blendChannel
+  asl a
+  asl a
+  asl a
+  asl a
+  asl a
+  asl a
+  asl a
+  asl a
+  asl a
+  asl a
+  ora 1,s
+  sta 1,s
+
+  pla
+  ply
+  plx
+  rts
+
+_blendChannel:
+  pha
+  phx
+  phy
+
+  ;get absolute difference
+  lda 1,s
+  sec
+  sbc 3,s
+  bpl +
+    eor.w #$ffff
+    inc a
+
++
+  tax
+  lda 5,s
+  jsr core.math.mul
+  
+  ;quantized difference
+  sta 5,s
+
+  lda 3,s
+  asl a
+  asl a
+  sec
+  sbc 5,s
+  lsr a
+  lsr a
+  sta 5,s
+
+  ply
+  plx
+  pla
+  rts
+
+_rotate:
+  inc this.counter
+  lda this.counter
+  and this.delay
+  bne +
+    jsr _rotatePalette
+    jsr palette.library.flush
+
++
+  rts
+
+
+  METHOD play
+  lda this.state
+  asl a
+  tax
+  jsr (_stateLUT,x)
+  rts
+
+_rotatePalette:
+  php
+  rep #$31
+
+  pea 0 ;wrap counter
+  pea 0 ;color counter
+  ;get index of current subpalette
+  lda this.subindex
+  tax
+  lda palette.color.length
+  jsr core.math.mul
+  clc
+  adc palette.color.length
+  pha
+
+  ;store wrap counter
+  clc
+  adc palette.color.length
+  asl a
+  sta 5,s
+
+  pla
+  ;get real word index
+  clc 
+  adc this.index
+  asl a
+  tax
+
+  ldy #0
+
+-
+    lda.w GLOBAL.wramBuffer.start,x
+    sta.w GLOBAL.wramBuffer.start,y
+
+    inx
+    inx
+
+    ;check for source wrap around
+    txa
+    cmp 3,s
+    bcc +
+      sec
+      sbc palette.color.length
+      sec
+      sbc palette.color.length    
+
++
+    iny
+    iny
+    lda 1,s
+    inc a
+    sta 1,s
+    cmp palette.color.length
+    bcc -
+
+  pla
+  pla
+
+  inc this.subindex
+  lda this.subindex
+  and.w #%11
+  sta this.subindex
+  bne +
+    inc this.index
+    lda this.index
+    cmp palette.color.length
+    bcc +
+      stz this.index
+
++
+  plp
+  rts
+
+  METHOD kill
+  jsr palette.library.deallocate
+  lda #OBJR_kill
+  sta 3,s   
+  rts
+
+  CLASS Palette.rotate
+.ends	
+	

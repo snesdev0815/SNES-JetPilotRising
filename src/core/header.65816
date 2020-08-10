@@ -1,0 +1,51 @@
+.include "src/core/header.h"
+
+.org $7fc0
+.section "regular header" force
+  .db "JET PILOT RISING     "
+  .db $30		;normal lorom mapping
+  .db $0		;cartridgetype
+  .db 9  		;32mbit romsize
+  .db 0			;sramsize
+  .db 0 		;country
+  .db $33		;license code, extended header
+  .db 1 		;version
+checksum.rom.xor:
+  .dw $ffff
+checksum.rom:
+  .dw $0000
+.ends
+
+.org $7FB0h
+.section "extended header" force
+	.db "DL"	;extended maker code.
+	.db "UJRJ"	;extended game code. U == unlicensed/homebrew
+	.db 0,0,0,0,0,0	;reserved
+	.db 0		;expansion flash
+	.db 0		;expansion ram
+	.db 0		;special version
+	.db 0		;chipset subtype
+.ends
+
+.bank 0 slot 0
+.org $7fe4
+.section "native vector" force
+	.dw StopCop
+	.dw Stop
+	.dw EmptyHandler
+	.dw NmiHandler
+	.dw EmptyHandler
+	.dw IrqHookUp
+.ends
+
+.org $7ff4
+.section "emu vector" force
+	.dw StopCop
+	.dw EmptyHandler
+	.dw EmptyHandler
+	.dw EmptyHandler
+	.dw Boot
+	.dw 0
+.ends
+
+.bank BANK.PROGRAM

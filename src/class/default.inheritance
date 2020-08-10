@@ -1,0 +1,44 @@
+/*
+* part of a very crude function inheritance model
+*
+* when included at the end inside of an object section,
+* this file will implement all common object methods not yet defined in object itself,
+* resulting in less redundant typed code and implementation stringency.
+*/
+
+.ifndef __init
+  .define __init
+  _init:
+	rts
+.endif
+
+.ifndef __play
+  .define __play
+  _play:
+	rts
+.endif
+
+.ifndef __pause
+  .define __pause
+  _pause:
+    rts
+.endif
+
+.ifndef __disable
+  .define __disable
+  _disable:
+    rts
+.endif
+
+.ifndef __enable
+  .define __enable
+  _enable:
+    rts
+.endif
+
+.ifndef __kill
+  .define __kill
+  _kill:
+  jmp core.library.kill
+
+.endif

@@ -1,0 +1,85 @@
+
+  SCRIPT titlescreen
+
+  .redef obj.layer0 hashPtr.1
+  .redef obj.layer1 hashPtr.2
+  .redef obj.hdma.window hashPtr.3
+  .redef obj.bgColor hashPtr.4
+  .redef obj.brightnessGradient hashPtr.5
+
+  .redef obj.brightness this._tmp
+  .redef obj.fixedColor this._tmp+4
+
+  ;kill all other scripts first
+  lda.w #OBJECT.PROPERTIES.isScript
+  SCRIPT_JSR iterator.library.killOthers
+  
+  SCRIPT_NEW Brightness.CLS.PTR obj.brightness
+  lda.w #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.set.MTD obj.brightness
+
+  ;???
+  lda.w #hdma.windowMaskAnimation.CLS.PTR
+  SCRIPT_JSR iterator.library.kill.byId
+
+  ;acquire bg color first
+  SCRIPT_NEW palette.bgcolor.CLS.PTR obj.bgColor PALETTE.black.PTR
+
+  SCRIPT_NEW Brightness.CLS.PTR obj.brightness
+ 
+  SCRIPT_NEW fixedColor.CLS.PTR obj.fixedColor
+  lda.w #FIXED_COLOR.BLACK
+  SCRIPT_CALL fixedColor.set.MTD obj.fixedColor
+
+  sep #$20
+  lda.b #(BGMODE_MODE_1 | BGMODE_PRIORITY_LAYER_3)
+  sta.w ScreenMode
+  lda.w MainScreen
+  and.b #(T_BG1_ENABLE | T_BG2_ENABLE | T_BG3_ENABLE | T_BG4_ENABLE) ~$ff
+  ora.b #T_OBJ_ENABLE
+  sta.w MainScreen
+  rep #$31
+
+;***********************************
+; title screen
+;***********************************
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.logo.packed.PTR 0 0 BG.LAYER.0
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer1 0 0 BG.logo.bg.packed.PTR 0 0 BG.LAYER.1
+  
+  SCRIPT_CALL Background.generic.setPosition.MTD obj.layer0 0 $1f0 0
+
+  SCRIPT_NEW hdma.brightness.CLS.PTR obj.brightnessGradient
+
+  lda #BRIGHTNESS.FULL
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SCRIPT_NEW hdma.windowMaskAnimation.CLS.PTR obj.hdma.window HDMA.fade_in.PTR
+  WAIT_FOR obj.hdma.window
+
+  SAVE
+
+  ldx #INPUT.DEVICE.ID.0
+  SCRIPT_JSR core.input.get.trigger
+  and.w #JOY_BUTTON_START
+  bne +
+    rts
+
++
+  lda.w #AUDIO.VOLUME.MUTE
+  SCRIPT_JSR core.audio.fadeToVolume
+
+  SCRIPT_NEW hdma.windowMaskAnimation.CLS.PTR obj.hdma.window HDMA.fade_out.PTR
+  SCRIPT_CALL hdma.windowMaskAnimation.setCallback.MTD obj.hdma.window hdma.blackScreen.CLB
+  WAIT_FOR obj.hdma.window
+
+  SAVE
+  SCRIPT_JSR core.audio.fadeComplete
+  bcs +
+    rts
+
++  
+
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer1
+  SCRIPT_NEW Script.CLS.PTR VOID game level.level1.PTR
+  DIE

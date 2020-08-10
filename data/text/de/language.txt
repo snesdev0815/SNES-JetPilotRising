@@ -1,0 +1,17 @@
+# textfile, utf-8 format.
+#
+# Here are some special chars so that your text editor knows what encoding to select: äöüß€
+#
+# File format:
+# Comments are denoted by # as first character on a line 
+# Textlines are denoted like so: identifier=textstring
+# Identifiers may consist of Letters A-Z, a-z and number 0-9
+# Anything not identified as comment line or new textstring is appended to last string
+# Whitespace, linebreaks, tabs in front and after each textstring are stripped.
+# Lines may be separated by Unix (\n) or Windows (\r\n) linebreaks
+# Linebreaks in this file DO NOT translate to linebreaks in the in-game text. Use the <break> command for that
+#
+# Control codes are denoted by <command[, arg0, arg1, ... argn]>
+# For a list of supported control codes, see documentation
+
+current=deutsch<end>

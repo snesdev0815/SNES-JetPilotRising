@@ -1,0 +1,69 @@
+/**
+* 
+*/
+.include "src/class/player/pause.h"
+.section "pause"
+
+  METHOD init
+  rep #$31
+  NEW Brightness.CLS.PTR this.brightness
+  rts
+
+  METHOD play
+  rep #$31
+
+  ;pause button pressed?
+  ldx #INPUT.DEVICE.ID.0
+  jsr core.input.get.trigger
+  and.w #JOY_BUTTON_START
+  beq +
+    lda this.status
+    eor.w #PAUSE.STATUS.ENABLED
+    sta this.status
+    beq ++
+
+      CALL Brightness.get.MTD this.brightness
+      sta this.brightness.buffer
+      lda.w #PAUSE.BRIGHTNESS
+      CALL Brightness.fadeTo.MTD this.brightness
+
+      jsr iterator.library.reset
+-
+      lda.w #OBJECT.PROPERTIES.isSprite
+      jsl extern.iterator.each.byProperties
+      bcc +++
+
+        ldx #iterator.target
+        jsr core.object.pause
+        bra -
+        
++++        
+      rts
+
+++
+
+      lda this.brightness.buffer
+      CALL Brightness.fadeTo.MTD this.brightness
+
+      jsr iterator.library.reset
+-
+      lda.w #OBJECT.PROPERTIES.isSprite
+      jsl extern.iterator.each.byProperties
+      bcc +
+
+        ldx #iterator.target
+        jsr core.object.resume
+        bra -
+
++
+  rts
+
+  METHOD kill
+  rep #$31
+  lda #OBJR_kill
+  sta 3,s   
+  rts
+
+  CLASS Pause
+.ends	
+	

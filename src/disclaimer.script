@@ -1,0 +1,171 @@
+/**
+* Disclaimer that's displayed immediately after booting.
+*
+*/
+
+  SCRIPT disclaimer
+
+  .redef obj.layer0 hashPtr.1
+  .redef obj.hdma.window hashPtr.2
+  .redef obj.vwf hashPtr.3
+  .redef obj.parser hashPtr.4
+
+  .redef obj.brightness this._tmp
+  .redef obj.fixedColor this._tmp+4
+  .redef obj.bgColor this._tmp+8
+
+  SCRIPT_NEW Brightness.CLS.PTR obj.brightness
+  
+  lda.w #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.set.MTD obj.brightness
+
+  ;kill all other scripts first
+  lda.w #OBJECT.PROPERTIES.isScript
+  SCRIPT_JSR iterator.library.killOthers
+
+  ;acquire bg color first
+  SCRIPT_NEW palette.bgcolor.CLS.PTR obj.bgColor PALETTE.black.PTR
+  SCRIPT_NEW fixedColor.CLS.PTR obj.fixedColor
+  lda.w #FIXED_COLOR.BLACK
+  SCRIPT_CALL fixedColor.set.MTD obj.fixedColor
+
+  sep #$20
+  lda.b #(BGMODE_MODE_1 | BGMODE_PRIORITY_LAYER_3)
+  sta.w ScreenMode
+  lda.w MainScreen
+  and.b #(T_BG1_ENABLE | T_BG2_ENABLE | T_BG3_ENABLE | T_BG4_ENABLE) ~$ff
+  ora.b #T_OBJ_ENABLE
+  sta.w MainScreen
+
+  stz.w SubScreen
+
+  lda #(CGWSEL_CLIP_COL_NEVER | CGWSEL_NO_COL_MATH_NEVER)
+  sta.w colorAdditionSelect
+
+  stz.w CgadsubConfig
+  rep #$31
+
+;***********************************
+; disclaimer
+;***********************************
+  SCRIPT_NEW_TRY background.textlayer.vwf.CLS.PTR obj.vwf $3000 BG.LAYER.2 0 0
+
+  pei (obj.vwf)
+  pei (obj.vwf+2)
+  SCRIPT_NEW vwf.parser.CLS.PTR obj.parser
+  pla
+  pla
+
+
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+      rts
+
++
+  ;draw text
+  pea VOID
+  pea 16
+  pea 56
+  pea 148
+  pea FONT.big_2bpp.PTR
+  pea text.dialogue.disclaimer
+  SCRIPT_CALL vwf.parser.print.MTD obj.parser
+  pla
+  pla
+  pla
+  pla
+  pla
+  pla
+
+  ;wait for print complete
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+    rts
+
++
+
+  ;draw text
+  pea VOID
+  pea 32
+  pea 16
+  pea 240
+  pea FONT.big_2bpp.PTR
+  pea text.dialogue.disclaimer1
+  SCRIPT_CALL vwf.parser.print.MTD obj.parser
+  pla
+  pla
+  pla
+  pla
+  pla
+  pla
+
+  ;wait for print complete
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+    rts
+
++
+
+  ;draw text
+  pea VOID
+  pea 112
+  pea 16
+  pea 240
+  pea FONT.big_2bpp.PTR
+  pea text.dialogue.disclaimer2
+  SCRIPT_CALL vwf.parser.print.MTD obj.parser
+  pla
+  pla
+  pla
+  pla
+  pla
+  pla
+
+  ;wait for print complete
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+    rts
+
++
+
+  ;draw text
+  pea VOID
+  pea 192
+  pea 16
+  pea 240
+  pea FONT.big_2bpp.PTR
+  pea text.dialogue.disclaimer3
+  SCRIPT_CALL vwf.parser.print.MTD obj.parser
+  pla
+  pla
+  pla
+  pla
+  pla
+  pla
+
+  ;wait for print complete
+  SAVE
+  SCRIPT_CALL background.textlayer.vwf.isDone.MTD obj.vwf
+  bcs +
+    rts
+
++
+
+  lda #BRIGHTNESS.FULL
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SCRIPT_NEW hdma.windowMaskAnimation.CLS.PTR obj.hdma.window HDMA.fade_in.PTR
+  WAIT_FOR obj.hdma.window
+
+  SLEEP 300
+
+  SCRIPT_NEW hdma.windowMaskAnimation.CLS.PTR obj.hdma.window HDMA.fade_out.PTR
+  SCRIPT_CALL hdma.windowMaskAnimation.setCallback.MTD obj.hdma.window hdma.blackScreen.CLB
+  WAIT_FOR obj.hdma.window
+
+  SCRIPT_NEW Script.CLS.PTR VOID intro
+  DIE

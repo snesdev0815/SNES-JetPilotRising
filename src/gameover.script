@@ -1,0 +1,129 @@
+
+  SCRIPT gameover
+
+  .redef obj.layer0 hashPtr.1
+  .redef obj.layer1 hashPtr.2
+  .redef obj.hdma.window hashPtr.3
+  
+  .redef obj.brightness this._tmp
+  .redef obj.fixedColor this._tmp+4
+  .redef obj.bgColor this._tmp+8
+
+  ;kill all other scripts first
+  lda.w #OBJECT.PROPERTIES.isScript
+  SCRIPT_JSR iterator.library.killOthers
+
+  ;if level changed during gameplay, level pointer of game.script may get lost and fail to kill level, hence this hack:
+  lda.w #level.generic.CLS.PTR
+  SCRIPT_JSR iterator.library.kill.byId
+
+  SCRIPT_JSR core.screen.blur
+
+  SCRIPT_NEW Brightness.CLS.PTR obj.brightness
+  lda.w #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.set.MTD obj.brightness
+
+  SLEEP 3
+
+  ;acquire bg color first
+  SCRIPT_NEW palette.bgcolor.CLS.PTR obj.bgColor PALETTE.black.PTR
+ 
+  SCRIPT_NEW fixedColor.CLS.PTR obj.fixedColor
+  lda.w #FIXED_COLOR.BLACK
+  SCRIPT_CALL fixedColor.set.MTD obj.fixedColor
+
+  sep #$20
+  lda.b #(BGMODE_MODE_1 | BGMODE_PRIORITY_LAYER_3)
+  sta.w ScreenMode
+  lda.w MainScreen
+  and.b #(T_BG1_ENABLE | T_BG2_ENABLE | T_BG3_ENABLE | T_BG4_ENABLE) ~$ff
+  ora.b #T_OBJ_ENABLE
+  sta.w MainScreen
+
+  stz.w SubScreen
+
+  lda #(CGWSEL_CLIP_COL_NEVER | CGWSEL_NO_COL_MATH_NEVER)
+  sta.w colorAdditionSelect
+
+  stz.w CgadsubConfig
+  rep #$31
+
+  ldx #0
+  ldy #0
+  SCRIPT_JSR core.screen.setPosition
+
+  pea 512
+  pea 512
+  pea 0
+  pea 0
+  SCRIPT_JSR core.screen.setPlayfieldBorder
+  pla
+  pla
+  pla
+  pla
+
+;***********************************
+; game over
+;***********************************
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.game_over.text.packed.PTR 0 ANIMATION.FLAGS.PRIORITY_MAX BG.LAYER.2
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer1 0 0 BG.game_over.packed.PTR 0 0 BG.LAYER.1
+  
+  SCRIPT_CALL Background.generic.setPosition.MTD obj.layer0 0 (210 ~$ffff) 0
+
+  lda #BRIGHTNESS.FULL
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SCRIPT_NEW hdma.windowMaskAnimation.CLS.PTR obj.hdma.window HDMA.fade_in.PTR
+  WAIT_FOR obj.hdma.window
+
+  SAVE
+
+  LOOP 120
+    ldx #0
+    ldy #0
+    SCRIPT_JSR core.screen.setPosition
+    nop
+  LOOP
+
+
+  ;logo comes falling down
+  LOOP 25
+    SCRIPT_CALL Background.generic.translate.MTD obj.layer0 0 2000 0
+  LOOP
+
+  SCRIPT_NEW level.screen.shake.CLS.PTR VOID 0 0 0 0 $f 1
+
+  LOOP 60
+    ldx #0
+    ldy #0
+    SCRIPT_JSR core.screen.setPosition
+
+    nop
+  LOOP
+
+  ldx #INPUT.DEVICE.ID.0
+  SCRIPT_JSR core.input.get.trigger
+  and.w #JOY_BUTTON_START
+  bne +
+    rts
+
++
+  lda.w #AUDIO.VOLUME.MUTE
+  SCRIPT_JSR core.audio.fadeToVolume
+
+  SCRIPT_NEW hdma.windowMaskAnimation.CLS.PTR obj.hdma.window HDMA.fade_out.PTR
+  SCRIPT_CALL hdma.windowMaskAnimation.setCallback.MTD obj.hdma.window hdma.blackScreen.CLB
+  WAIT_FOR obj.hdma.window
+
+  SAVE
+  SCRIPT_JSR core.audio.fadeComplete
+  bcs +
+    rts
+
++
+
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL Background.generic.kill.MTD obj.layer1
+  SCRIPT_NEW Script.CLS.PTR VOID intro
+  DIE
+

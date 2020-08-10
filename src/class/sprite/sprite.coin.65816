@@ -1,0 +1,118 @@
+/**
+* Generic animated sprite with single animation file 
+* 
+* @param 1<int, 16bit>  x-pos
+* @param 2<int, 16bit>  y-pos
+* @param 3<int, 16bit>  x-size
+* @param 4<int, 16bit>  y-size
+*/
+.include "src/class/sprite/sprite.coin.h"
+.section "sprite.coin"
+
+  METHOD init
+  lda OBJECT.CALL.ARG.1,s
+  sta.b dimension.position.x + 1
+
+  lda OBJECT.CALL.ARG.2,s
+  sta.b dimension.position.y + 1
+
+  lda.w #(ANIMATION.FLAGS.IS_LOOPING | ANIMATION.FLAGS.IS_COLOR_MATH)
+  tsb animation.flags.static
+
+  lda.w #OAM.PRIORITY.2
+  sta animation.buffer.flags
+  
+  lda #SPRITE.coin.PTR
+  jsr sprite.library.startAnimation.try
+  bcs +
+    jmp _kill
+
++
+
+  lda #$3
+  sta.b animation.speed
+
+  ;set bg collision basepoint
+  lda dimension.size.x
+  lsr a
+  sta dimension.collision.basepoint.x
+
+  lda dimension.size.y
+  lsr a
+  sta dimension.collision.basepoint.y
+  rts
+
+  METHOD pause
+  jmp sprite.library.pauseAnimation
+
+  METHOD play
+  inc this.age
+  lda this.state
+  asl a
+  tax
+  jsr (_state.lut,x)
+  bcs +
+    jmp _kill
+
++
+  rts
+
+  METHOD collect
+  stz this.age
+  lda.w #SPRITE.COIN.STATE.COLLECTED
+  sta this.state
+  rts
+
+
+_state.lut:
+  .dw _state.chilling
+  .dw _state.collected
+
+_state.chilling:
+  AX16
+  jsr sprite.library.playAnimation
+
+  ;kill immediately if offscreen after some time.
+  lda this.age
+  cmp #40
+  bcc +
+  
+  lda iterator.properties
+  bit.w #OBJECT.PROPERTIES.isOnScreen
+  bne +
+    clc
+    rts
+
++
+  sec
+  rts
+
+_state.collected:
+  sep #$20
+  stz.b animation.speed
+  rep #$31
+
+  lda #(OBJECT.PROPERTIES.isCollidable | OBJECT.PROPERTIES.isItem)
+  jsr iterator.library.clearProperties
+
+  dec dimension.position.y+1
+  dec dimension.position.y+1
+
+  jsr sprite.library.playAnimation
+
+  lda this.age
+  cmp.w #SPRITE.COIN.COLLECTED.MAX_AGE
+  bcc +
+    clc
+    rts
+
++
+  sec
+  rts
+
+  METHOD kill
+  jmp sprite.library.kill
+
+  CLASS sprite.coin collect
+.ends	
+	

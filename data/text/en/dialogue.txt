@@ -1,0 +1,45 @@
+# textfile, utf-8 format.
+#
+# Here are some special chars so that your text editor knows what encoding to select: ‰ˆ¸ﬂÄ
+#
+# File format:
+# Comments are denoted by # as first character on a line
+# Textlines are denoted like so: identifier=textstring
+# Identifiers may consist of Letters A-Z, a-z and number 0-9
+# Anything not identified as comment line or new textstring is appended to last string
+# Whitespace, linebreaks, tabs in front and after each textstring are stripped.
+# Lines may be separated by Unix (\n) or Windows (\r\n) linebreaks
+# Linebreaks in this file DO NOT translate to linebreaks in the in-game text. Use the <break> command for that
+#
+# Control codes are denoted by <command[, arg0, arg1, ... argn]>
+# For a list of supported control codes, see documentation
+
+none=
+I am error.ƒ÷‹‰ˆ¸ﬂ<end>
+
+disclaimer=
+-DISCLAIMER-<end>
+
+disclaimer1=
+This game is not licensed by,<break>
+authorized, endorsed by, or<break>
+connected with Nintendo Co., Ltd.<break>
+This game is non-commercial.<end>
+
+disclaimer2=
+Uses graphics by:<break>
+The B.O.B., Orkimides, BlackEye,<break>
+ben2theedge, DarkfalzX,<break>
+CharlieMcShane, Leath<end>
+
+disclaimer3=
+Uses music by: stargazer<end>
+
+poem=
+Solang du wallst auf Erdenbahnen,<break>
+dem Irrtum, Freund, entgehst du nicht,<break>
+doch l‰ﬂt dich Irrtum Wahrheit ahnen.<end>
+poem2=
+Irrtum ist Farbe, Wahrheit Licht.<break>
+         -Emanuel Geibel, 1815-1884<end>
+         

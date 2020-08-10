@@ -1,0 +1,46 @@
+/**
+* Audio file includes and custom definitions
+*
+*/
+
+.enum 0 export
+    AUDIO.EFFECT.ROCKET_EXPLOSION db
+    AUDIO.EFFECT.ROCKET_START db
+    AUDIO.EFFECT.COIN db
+    AUDIO.EFFECT.MEOW db
+    AUDIO.EFFECT.MEOW_LOW db
+    AUDIO.EFFECT.MEOW_SUPER_LOW db
+    AUDIO.EFFECT.TEXTBOX db
+    AUDIO.EFFECT.MAX ds 0
+.ende
+
+.Section "Audio Player" superfree
+spc700.code:
+  .incbin "build/src/audio/apucode.bin.lz4"
+.ends
+
+
+.section "samplepack" superfree
+SamplePack0:
+    .incbin "build/src/audio/0.samplepack.bin"
+.ends
+
+
+.Section "SongLUT" superfree
+SongLUT:
+    PTRLONG SongLUT Song.none
+    PTRLONG SongLUT Song.intro
+    PTRLONG SongLUT Song.level0
+    PTRLONG SongLUT Song.level1
+    PTRLONG SongLUT Song.level2  
+    PTRLONG SongLUT Song.level3
+    PTRLONG SongLUT Song.credits
+.ends
+
+    SONG none none
+    SONG stargazer_pazasol level0
+    SONG stargazer_eyewash level1
+    SONG stargazer_maryjane level2 
+    SONG stargazer_desirata level3
+    SONG stargazer_chip2 intro 
+    SONG stargazer_memories credits

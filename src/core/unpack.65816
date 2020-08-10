@@ -1,0 +1,259 @@
+/**
+* Unpacks LZ4-compressed files
+*
+* Self-modifying code, needs to reside in RAM.
+* Adapted from https://www.brutaldeluxe.fr/products/crossdevtools/lz4/index.html
+*
+*/
+
+.include "src/core/unpack.h"
+.section "core.unpack"
+
+core.unpack.init:
+  AX16
+  rts
+
+/*
+a: packed file bank
+x: packed file offset
+
+unpacks to $7f:0000
+
+packed fileheader must contain file length.
+
+returns unpacked data offset, bank, length (if data uncompressed, may return original data pointer)
+*/    
+.redef unpack.pointer temp.misc
+.redef unpack.size temp.misc+4
+
+_badFile:
+    TRIGGER_ERROR E_LZ4BadFile
+
+
+;return a,16bit: unpacked length
+/**
+* @param a <int, 8bit> source bank
+* @param x <int, 16bit> source offset
+* @param 1 <int, 16bit> target bank
+* @param 2 <int, 16bit> target offset
+*/
+core.unpack.unpack:
+    AX16
+    stx.b unpack.pointer
+    sta.b unpack.pointer+2
+
+    ldy.w #LZ4.MAGIC_NUMBER
+    lda.b [unpack.pointer],y
+    cmp.w #LZ4.MAGIC.LO
+    bne _badFile
+    iny
+    iny
+    lda.b [unpack.pointer],y
+    cmp.w #LZ4.MAGIC.HI
+    bne _badFile
+    ldy.w #LZ4.FLG
+    lda.b [unpack.pointer],y
+    and.w #(LZ4.FLG.VERSION | LZ4.FLG.CONTENT_SIZE)
+    cmp.w #((%01 << 6) | LZ4.FLG.CONTENT_SIZE)
+    bne _badFile
+
+    ;unpacked file too large
+    ldy.w #LZ4.CONTENT_SIZE+2
+    lda.b [unpack.pointer],y
+    iny
+    iny
+    ora.b [unpack.pointer],y
+    iny
+    iny
+    ora.b [unpack.pointer],y
+    ;packed file too large or uncompressed
+    ldy.w #LZ4.BLOCK_SIZE+2
+    ora.b [unpack.pointer],y
+    bne _badFile
+
+    jsr core.nmi.stop
+
+
+    ldy.w #LZ4.CONTENT_SIZE
+    lda.b [unpack.pointer],y
+    sta.b unpack.size
+
+    lda unpack.pointer
+    clc
+    adc.w #LZ4.DATA
+    tax
+
+    ldy.w #LZ4.BLOCK_SIZE
+    clc
+    adc.b [unpack.pointer],y
+    tay
+
+    sep #$20
+    ;disable hdma, too, just to be sure
+    lda.b #0
+    sta.l HDMAEN
+
+    lda unpack.pointer+2
+    xba
+    lda 3,s
+    rep #$31
+
+    jsr core.unpack.fromROM
+    sec
+    sbc 5,s
+    cmp unpack.size
+    beq +
+        TRIGGER_ERROR E_LZ4UnpackError
+
++    
+    jmp core.nmi.start
+
+++
+
+
+/**
+    A = Hi: Bank Src, Lo:Bank Dst
+    X = Header Size = 1st Packed Byte offset
+    Y = Pack Data Size
+    => Return in A the length of unpacked Data
+*/
+;NOT nmi-safe! uses dma channel 0,1,2
+;NOT wram-port safe! uses wram port
+core.unpack.fromROM:
+    AX16
+    phb
+    phd
+    pea unpack_zp_dma
+    pld
+
+    sep #$20
+    ;target
+    pha
+    sta.b self.mvn_copy+1
+    sta.b self.mvn_copy+2
+
+    lda.b #$54  ;mvn
+    sta.b self.mvn_copy
+    lda.b #$6b  ;rtl
+    sta.b self.mvn_copy+3
+
+    lda 1,s
+    and.b #$1
+    sta.l WMADDH
+
+    plb
+    xba
+    ;source
+    sta.b self.ReadToken+2
+    sta.b DMASRC0B-unpack_zp_dma
+
+    rep #$31
+    stz.b self.ReadToken
+
+    lda.w #$8002
+    sta.b DMAP0-unpack_zp_dma         ;Set DMA mode to fixed source, WORD to $2180
+
+    sty.b self.Limit
+    txy
+    lda 8-1+3,s
+    tax
+_readToken:
+    lda.b [self.ReadToken],y
+    iny
+    sta.b self.Match_2
+
+_literal:
+    and.w #$00f0
+    beq _limit
+    cmp.w #$00f0
+    bne _literal_1
+    lda.w #$000f
+    sta.b self.Length
+-
+    lda.b [self.ReadToken],y
+    iny
+    and.w #$00ff
+    cmp.w #$00ff
+    bne +
+        clc
+        adc.b self.Length
+        sta.b self.Length
+        bra -
+
++
+    adc.b self.Length
+    bra _literal_2
+
+_literal_1:
+    lsr a
+    lsr a
+    lsr a
+    lsr a
+_literal_2:
+    sta.b DMALEN0L-unpack_zp_dma
+
+    sty.b DMASRC0L-unpack_zp_dma
+
+    txa
+    sta.l WMADDL
+    clc
+    adc DMALEN0L-unpack_zp_dma
+    tax
+
+    lda.w #DMA_CHANNEL0_ENABLE
+    sta.l MDMAEN         ;Initiate transfer
+
+    ldy.b DMASRC0L-unpack_zp_dma
+
+_limit:
+    cpy.b self.Limit
+    beq _end
+
+_match:
+    txa
+    sec
+    sbc.b [self.ReadToken],y
+    iny
+    iny
+    sta.b self.Match_4
+
+    lda.b self.Match_2
+    and.w #$000f
+    cmp.w #$000f
+    bne _Match_3
+
+    sta.b self.Length
+-
+    lda.b [self.ReadToken],y
+    iny
+    and.w #$00ff
+    cmp.w #$00ff
+    bne +
+        clc
+        adc.b self.Length
+        sta.b self.Length
+        bra -
+
++
+    adc.b self.Length    
+_Match_3:
+    clc
+    adc.w #$0003
+
+    phy
+    txy
+    ldx.b self.Match_4
+    jsl self.mvn_copy + unpack_zp_dma
+    tyx
+    phk
+    plb
+    ply
+    jmp _readToken
+
+_end:
+    txa
+    pld
+    plb
+    rts
+
+.ends

@@ -1,0 +1,29 @@
+/**
+* 
+*/
+.include "src/class/player/introstart.h"
+.section "introstart"
+
+
+  METHOD init
+  rts
+
+
+  METHOD play
+  ;pause button pressed?
+  ldx #INPUT.DEVICE.ID.0
+  jsr core.input.get.trigger
+  and.w #JOY_BUTTON_START
+  beq +
+    NEW Script.CLS.PTR VOID titlescreen
+    bra _kill
+
++
+  rts
+
+  METHOD kill
+  jmp object.library.kill
+
+  CLASS introstart
+.ends	
+	

@@ -1,0 +1,114 @@
+/**
+* 
+* @param 1<int, 8bit>  bg-layer id
+* @param 2<int, 16bit>  animation id
+* @param 3<bool>  true if tile priority should be set
+* @param 4<bool>  animation delay
+*/
+.include "src/class/background/Background.generic.h"
+.section "Background.generic"
+
+  METHOD init
+Background.generic.init:  
+  lda OBJECT.CALL.ARG.1,s
+  sta.b dimension.position.x + 1
+
+  lda OBJECT.CALL.ARG.2,s
+  sta.b dimension.position.y + 1
+
+  lda OBJECT.CALL.ARG.6,s
+  sta.b this.bg
+
+  lda OBJECT.CALL.ARG.5,s
+  and.w #(ANIMATION.FLAGS.STATIC.PALETTES | ANIMATION.FLAGS.STATIC.TILES | ANIMATION.FLAGS.UPLOADED.PALETTES | ANIMATION.FLAGS.UPLOADED.TILES | ANIMATION.FLAGS.UPLOADED.TILES_BIG | ANIMATION.FLAGS.UPLOADED.TILEMAP | ANIMATION.FLAGS.IS_PLAYING) ~$ffff
+  ora.w #ANIMATION.FLAGS.POSITION_ABSOLUTE
+  tsb.b animation.flags.static
+
+  bit.w #ANIMATION.FLAGS.PRIORITY_MAX
+  beq +
+    lda.w #BG.FORMAT.PRIORITY
+    sta animation.buffer.flags
+
++
+  lda OBJECT.CALL.ARG.3,s
+  jsr background.library.startAnimation
+
+  sep #$20
+  lda OBJECT.CALL.ARG.4,s
+  sta.b animation.speed
+  rep #$31
+
+  jsr background.library.allocateMemory
+  
+  lda.b this.bg
+  jsr background.library.makePhysical
+
+  ;play once to upload data
+  jmp background.library.playAnimation
+
+
+  METHOD play
+  jsr background.library.playAnimation
+  lda.b this.bg
+  jmp background.library.updateScroll
+
+  METHOD stop
+  jmp background.library.stopAnimation
+
+  /**
+  * @param 1 <int,16bit>    frame id
+  */
+  METHOD setFrame
+  lda OBJECT.CALL.ARG.1,s
+  sta animation.frame.current
+  ;force refresh
+  lda #$ff
+  sta animation.frame.last
+  jmp background.library.displayCurrentFrame
+
+  METHOD getFrame
+  lda animation.frame.current
+  rts
+
+
+  METHOD kill
+  lda this.bg
+  jmp background.library.kill
+
+
+  METHOD getAllocatedPalette
+Background.generic.getAllocatedPalette:
+  ldx.b animation.palette.start
+  ldy.b animation.palette.length
+  lda.b animation.palette.id
+  and.w #$ff
+  clc
+  beq +
+    sec
+
++ rts
+
+
+  METHOD setPriority
+  stz animation.buffer.flags
+  bit.w #TRUE
+  beq +
+    lda.w #BG.FORMAT.PRIORITY
+    sta animation.buffer.flags
+
++  
+  rts
+
+  METHOD setFlags
+  and.w #(ANIMATION.FLAGS.STATIC.PALETTES | ANIMATION.FLAGS.STATIC.TILES | ANIMATION.FLAGS.UPLOADED.PALETTES | ANIMATION.FLAGS.UPLOADED.TILES | ANIMATION.FLAGS.UPLOADED.TILES_BIG | ANIMATION.FLAGS.ANY.UPLOADED.TILES | ANIMATION.FLAGS.IS_PLAYING) ~$ffff
+  tsb animation.flags.static
+  lda.b this.bg
+  jmp background.library.makePhysical
+
+  METHOD startAnimation
+  lda OBJECT.CALL.ARG.1,s
+  jmp background.library.startAnimation
+  
+  CLASS Background.generic getAllocatedPalette stop setFrame getFrame setPriority startAnimation setFlags
+.ends	
+	

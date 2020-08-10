@@ -1,0 +1,50 @@
+/**
+* OAM sprite animation file includes, lookup tables and custom definitions
+*
+*/
+
+.Section "SpriteAnimationLUT" superfree
+SpriteAnimationLUT:
+  .dw 0 ;dummy entry, first one must be clear
+  .db 0
+  PTRLONG SpriteAnimationLUT SPRITE.effect.explosion
+  PTRLONG SpriteAnimationLUT SPRITE.effect.explosion.small
+  PTRLONG SpriteAnimationLUT SPRITE.rocket
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.phoenix
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.chumchum_fat
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.chumchum
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.skeletroid
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.bat
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.lavablob
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.bearos
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.piranha_plant
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.skeletroid_small
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.rocksicle
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.mario
+  PTRLONG SpriteAnimationLUT SPRITE.enemy.dr_s
+  PTRLONG SpriteAnimationLUT SPRITE.coin
+  PTRLONG SpriteAnimationLUT SPRITE.paw
+
+.ends 
+
+
+.base LOROM
+.bank BANK.PROGRAM
+
+  SPRITE_ANIMATION effect.explosion static
+  SPRITE_ANIMATION effect.explosion.small
+  SPRITE_ANIMATION rocket
+  SPRITE_ANIMATION enemy.phoenix quarter
+  SPRITE_ANIMATION enemy.chumchum_fat eighth
+  SPRITE_ANIMATION enemy.chumchum quarter
+  SPRITE_ANIMATION enemy.skeletroid quarter
+  SPRITE_ANIMATION enemy.bat quarter
+  SPRITE_ANIMATION enemy.lavablob quarter
+  SPRITE_ANIMATION enemy.bearos quarter
+  SPRITE_ANIMATION enemy.piranha_plant quarter
+  SPRITE_ANIMATION enemy.skeletroid_small quarter
+  SPRITE_ANIMATION enemy.rocksicle quarter
+  SPRITE_ANIMATION enemy.mario quarter
+  SPRITE_ANIMATION enemy.dr_s eighth
+  SPRITE_ANIMATION coin
+  SPRITE_ANIMATION paw static

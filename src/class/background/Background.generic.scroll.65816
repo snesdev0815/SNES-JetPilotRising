@@ -1,0 +1,223 @@
+/**
+* generic scrolling background handler
+* background fixed to position 0x0 for now
+* automatically updates position relative to screen 
+*
+* @param 1<int, 8bit>  bg-layer id
+* @param 2<int, 16bit>  animation id
+* @param 3<bool>  true if tile priority should be set
+*/
+.include "src/class/background/Background.generic.scroll.h"
+.section "Background.generic.scroll"
+
+  METHOD init
+  jmp Background.generic.init  
+  
+  METHOD play
+  jsr _updateScreenPosition
+
+  ;check if tilemap update is required
+  lda this.screen.last.x
+  lsr a
+  lsr a
+  lsr a
+  pha
+  lda.b this.screen.current.x
+  lsr a
+  lsr a
+  lsr a
+  cmp.b 1,s
+  bne +
+    lda this.screen.last.y
+    lsr a
+    lsr a
+    lsr a
+    sta 1,s
+    lda.b this.screen.current.y
+    lsr a
+    lsr a
+    lsr a
+    cmp.b 1,s
+    bne +
+      jsr _updateScroll
+      pla
+      rts
+
++
+  pla
+  jsr _updateTilemap
+
+  jsr background.library.playAnimation
+  lda.b this.bg
+  jmp background.library.updateScroll
+
+  METHOD kill
+  lda this.bg
+  jmp background.library.kill
+
+  METHOD getAllocatedPalette
+  jmp Background.generic.getAllocatedPalette
+
+
+/**
+* update bg scroll registers at sub-tile levels
+*/
+_updateScroll:
+  AX16
+  lda this.bg
+  and.w #$ff
+  cmp.w #BG.LAYER.3 + 1
+  bcc +
+    pha
+    TRIGGER_ERROR E_BadBgLayer
+
++
+  asl a
+  asl a
+  tax
+  lda.b this.screen.current.x
+  and.w #TILE.SIZE.X -1
+
+  sta.w xScrollBG1,x
+  lda.b this.screen.current.y
+  and.w #TILE.SIZE.Y -1
+  sta.w yScrollBG1,x
+
+  rts
+
+/**
+* calculate current position relative to screen
+*/
+_updateScreenPosition:
+  AX16
+
+  ;update last position buffer
+  lda.b this.screen.current.x
+  sta.b this.screen.last.x
+
+  lda.b this.screen.current.y
+  sta.b this.screen.last.y
+
+  ;get current pixel position relative to screen
+  jsr core.screen.getPosition
+  txa
+  sec
+  sbc.b dimension.position.x +1  
+  sta.b this.screen.current.x
+  tya
+  sec
+  sbc.b dimension.position.y +1  
+  sta.b this.screen.current.y
+
+  rts
+
+/**
+* 
+-get upper left tile of map on screen
+-issue x-width tilemap upload for every y-line 
+*/
+_updateTilemap:
+  AX16
+  jsr background.library.shiftPaletteStart
+  and.w #BG.PALETTE.BITS
+  pha  
+  pha   ;temp variable
+  pha
+
+  ;divide to get current upper left tile xy-position in tilemap
+  lda dimension.size.x
+  lsr a
+  lsr a
+  lsr a
+  sta 1,s
+
+  lda this.screen.current.y
+  lsr a
+  lsr a
+  lsr a
+  tay
+
+  lda.b this.screen.current.x
+  lsr a
+  lsr a
+  lsr a
+  
+    ;loop over vertical rows to get current upper left tile number
+-   cpy.w #0
+    beq +
+      clc
+      adc 1,s
+      dey
+      bra -
+
++
+  ;get start adress in animation tilemap
+  asl a ;2 bytes per tile
+  clc
+  adc.w #ANIMATION.FRAME.DATA
+  clc
+  adc.b animation.frame.tiles.length
+  tay   ;y now contains start pointer
+
+  ;calculate next line wrap add value
+  lda 1,s
+  asl a
+  sec
+  sbc.w #(BACKGROUND.GENERIC.TILESIZE.X * TILEMAP.ENTRY.SIZE)
+  sta 1,s
+
+  ldx.b background.ramBuffer.start
+
+  lda.b animation.tilemap.length
+  sta 3,s   ;contains last tile
+
+
+
+  ;loop over frame tiles, get tile config
+-   lda.b [animation.frame.pointer],y
+
+    xba
+    sep #$20
+    clc
+    adc 5,s
+    rep #$31
+    xba
+    ;vhopppcc
+    ora.b animation.buffer.flags
+    sta.w GLOBAL.wramBuffer.start,x
+
+	  inx
+	  inx
+	  iny
+	  iny
+
+      lda 3,s
+      dec a
+      dec a
+      sta 3,s
+
+      ;check if done writing single line
+      and.w #(BACKGROUND.GENERIC.TILESIZE.X * TILEMAP.ENTRY.SIZE) -1
+      bne +
+        
+        ;jump to beginning of next line in animation tilemap
+        tya
+        clc
+        adc 1,s
+        tay
+        
++
+      ;check if done copying
+      lda 3,s
+	  bne -
+
+  jsr background.library.uploadTilemap
+
+  pla
+  pla
+  pla
+  rts
+
+  CLASS Background.generic.scroll getAllocatedPalette
+.ends	
+	

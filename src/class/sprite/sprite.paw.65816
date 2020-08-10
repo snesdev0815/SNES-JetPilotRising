@@ -1,0 +1,98 @@
+/**
+* Displays number of lifes left
+* 
+* @param 1<int, 16bit>  x-pos
+* @param 2<int, 16bit>  y-pos
+* @param 3<int, 16bit>  x-size
+* @param 4<int, 16bit>  y-size
+*/
+.include "src/class/sprite/sprite.paw.h"
+.section "sprite.paw"
+
+  METHOD init
+  lda.w #SPRITE.PAW.POSITION.X
+  sta.b dimension.position.x + 1
+
+  lda.w #SPRITE.PAW.POSITION.Y
+  sta.b dimension.position.y + 1
+
+  lda.w #(ANIMATION.FLAGS.IS_LOOPING | ANIMATION.FLAGS.POSITION_ABSOLUTE | ANIMATION.FLAGS.IS_COLOR_MATH)
+  tsb animation.flags.static
+
+  lda.w #OAM.PRIORITY.3
+  sta animation.buffer.flags
+  
+  lda #SPRITE.paw.PTR
+  jsr sprite.library.startAnimation
+
+  lda #$1
+  sta.b animation.speed
+  rts
+
+  METHOD pause
+  jmp _drawLifes
+
+  METHOD play
+  inc.b this.age
+  lda.b this.age
+  and.w #$1f
+  bne +
+    jsr iterator.library.reset
+    lda #sprite.rocket.CLS.PTR
+    jsr iterator.library.each.byId
+    bcc +
+      CALL sprite.rocket.getLifeCount.MTD iterator.target
+      cmp this.lifes
+      beq ++
+        pha
+        lda.w #SPRITE.PAW.DISPLAY.AGE.MAX
+        sta this.display.age
+        pla
+
+++
+      sta this.lifes
+
++
+
+  lda this.display.age
+  beq +
+    dec this.display.age
+    jmp _drawLifes
+  
++
+  rts
+
+_drawLifes:
+  AX16
+  pei (dimension.position.y + 1)
+  pei (dimension.position.x + 1)
+
+  pei (this.lifes)
+-
+    lda 1,s
+    beq +
+      ;hack: move position so that sprite gets drawn as many times as we have lifes
+      lda dimension.position.x + 1
+      clc
+      adc.w #SPRITE.PAW.OFFSET.X
+      sta dimension.position.x + 1
+
+      jsr sprite.library.playAnimation
+
+      lda 1,s
+      dec a
+      sta 1,s
+      bra -
+
++
+  pla
+
+  pla
+  sta dimension.position.x + 1
+  pla
+  sta dimension.position.y + 1
+  rts
+
+  CLASS sprite.paw
+.ends	
+	

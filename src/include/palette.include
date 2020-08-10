@@ -1,0 +1,17 @@
+/**
+* Custom PPU Palette/CGRAM file includes
+*
+*/
+
+.Section "PaletteAnimationLUT" superfree
+PaletteAnimationLUT:
+  PTRLONG PaletteAnimationLUT PALETTE.black
+  PTRLONG PaletteAnimationLUT PALETTE.white
+  PTRLONG PaletteAnimationLUT PALETTE.overlay
+
+.ends 
+
+  PALETTE_ANIMATION black
+  PALETTE_ANIMATION white
+  PALETTE_ANIMATION overlay
+

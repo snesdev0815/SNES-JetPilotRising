@@ -1,0 +1,44 @@
+/**
+* hdma object that plays color animation
+* 
+*/
+.include "src/class/hdma/hdma.colorAnimation.h"
+.section "hdma.colorAnimation"
+
+  /**
+   * @param 1<int, 16bit>  id of hdma animation
+   */
+  METHOD init
+  lda OBJECT.CALL.ARG.1,s
+  jsr hdma.library.startAnimation
+  sep #$20
+
+  lda hdma.flags
+  ora #DMAP_1_REG_WRITE_TWICE
+  sta hdma.flags
+
+  lda #COLDATA & $ff
+  sta hdma.target
+
+  rep #$31
+  jmp hdma.library.start
+
+  METHOD play
+  jmp hdma.library.playAnimation
+
+  METHOD stop
+  jmp hdma.library.stopAnimation
+
+  METHOD getFrame
+  lda hdma.animation.frame.current
+  rts
+
+  METHOD setFrame
+  TRIGGER_ERROR E_Todo
+
+  METHOD kill
+  jmp hdma.library.kill
+
+  CLASS hdma.colorAnimation stop setFrame getFrame
+.ends	
+	

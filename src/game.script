@@ -1,0 +1,112 @@
+/**
+* Main game mode handler.
+*
+* Sets up screen mode, instanciates level, checks for player instanciation and life lost/game over.
+*
+*/
+
+  SCRIPT game
+
+  .redef obj.layer0 hashPtr.1
+  .redef obj.level hashPtr.2
+  .redef obj.palette hashPtr.3
+  .redef obj.pause hashPtr.4
+  .redef obj.hdmaWavyScroll hashPtr.5
+  .redef obj.lifecounter hashPtr.6
+  .redef obj.dummy0 hashPtr.7
+  .redef obj.player hashPtr.8
+  
+  .redef obj.brightness this._tmp
+  .redef obj.hdma.window this._tmp+4
+
+  ;kill all other scripts first
+  lda.w #OBJECT.PROPERTIES.isScript
+  SCRIPT_JSR iterator.library.killOthers
+
+  SCRIPT_NEW Brightness.CLS.PTR obj.brightness
+  lda #BRIGHTNESS.NONE
+  SCRIPT_CALL Brightness.set.MTD obj.brightness
+
+  ;set screen mode
+  sep #$20
+
+  lda.b #BGMODE_MODE_1
+  sta.w ScreenMode
+  lda.w MainScreen
+  and.b #(T_BG1_ENABLE | T_BG2_ENABLE | T_BG3_ENABLE | T_BG4_ENABLE) ~$ff
+  ora.b #T_OBJ_ENABLE
+  sta.w MainScreen
+
+;snap
+  lda.w SubScreen
+  and.b #(T_BG1_ENABLE | T_BG2_ENABLE | T_BG3_ENABLE | T_OBJ_ENABLE) ~$ff
+  ora.b #T_BG3_ENABLE
+  sta.w SubScreen
+
+  lda #(CGWSEL_CLIP_COL_NEVER | CGWSEL_NO_COL_MATH_NEVER | CGWSEL_ADD_SUBSCREEN)
+  sta.w colorAdditionSelect
+
+  lda #(CGADSUB_BAC_ENABLE | CGADSUB_OBJ_ENABLE | CGADSUB_BG3_ENABLE | CGADSUB_BG2_ENABLE | CGADSUB_BG1_ENABLE)
+  sta.w CgadsubConfig
+
+;snip
+  rep #$31
+
+  SCRIPT_NEW Pause.CLS.PTR obj.pause
+  SCRIPT_NEW sprite.paw.CLS.PTR obj.lifecounter
+
+  ;old film stock translucent overlay
+  ;must be initialized before level because it clobbers decompression buffer (which is reused as layer metatile buffer)
+  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.overlay.packed.PTR 0 ANIMATION.FLAGS.IS_SUBSCREEN BG.LAYER.2
+  SCRIPT_NEW Hdma.wavyLayer.CLS.PTR obj.hdmaWavyScroll BG.LAYER.2
+  SCRIPT_CALL Background.generic.getAllocatedPalette.MTD obj.layer0
+  pea 0
+  tya
+  lsr a
+  pha
+  phx
+  SCRIPT_NEW palette.animation.CLS.PTR obj.palette PALETTE.overlay.PTR
+  pla
+  pla
+  pla
+
+/*
+  dummy sprites, minimizes reallocation
+*/
+  SCRIPT_NEW sprite.dummy.CLS.PTR obj.dummy0 SPRITE.effect.explosion.PTR
+
+  pei (script.args)
+  SCRIPT_NEW level.generic.CLS.PTR obj.level
+  pla
+
+  CUTSCENE_ACQUIRE_OBJECT sprite.rocket.CLS.PTR obj.player
+
+  SCRIPT_NEW Brightness.CLS.PTR obj.brightness
+  lda #BRIGHTNESS.FULL
+  SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
+
+  SAVE
+
+  ;kill self if not present anymore
+  lda.w FrameCounter
+  and.w #$3f
+  beq +
+    rts
+
++
+  SCRIPT_JSR iterator.library.reset
+  lda #sprite.rocket.CLS.PTR
+  SCRIPT_JSR iterator.library.each.byId
+  bcc +
+    rts
+
++
+
+  SCRIPT_NEW hdma.windowMaskAnimation.CLS.PTR obj.hdma.window HDMA.fade_out.PTR
+  SCRIPT_CALL hdma.windowMaskAnimation.setCallback.MTD obj.hdma.window hdma.blackScreen.CLB
+  WAIT_FOR obj.hdma.window
+
+  SAVE
+
+  SCRIPT_NEW Script.CLS.PTR VOID gameover
+  DIE

@@ -1,0 +1,195 @@
+/**
+* boss chasing player
+* 
+* @param 1<int, 16bit>  x-pos
+* @param 2<int, 16bit>  y-pos
+* @param 3<int, 16bit>  x-size
+* @param 4<int, 16bit>  y-size
+* @param 5<int, 16bit>  enemy type
+* @param 6<int, 16bit>  angle
+* @param 7<int, 16bit>  speed
+*/
+.include "src/class/sprite/sprite.boss.h"
+.section "sprite.boss"
+
+  METHOD init
+  lda OBJECT.CALL.ARG.1,s
+  sta.b dimension.position.x + 1
+
+  lda OBJECT.CALL.ARG.2,s
+  sta.b dimension.position.y + 1
+
+  lda.w #(ANIMATION.FLAGS.IS_LOOPING | ANIMATION.FLAGS.IS_COLOR_MATH | ANIMATION.FLAGS.X_MIRROR)
+  tsb animation.flags.static
+
+  lda.w #OAM.PRIORITY.2
+  sta animation.buffer.flags
+
+  lda.w #SPRITE.enemy.dr_s.PTR
+  jsr sprite.library.startAnimation.try
+  bcs +
+    jmp _kill
+
++
+  ;set bg collision basepoint
+  lda dimension.size.x
+  lsr a
+  sta dimension.collision.basepoint.x
+
+  lda dimension.size.y
+  lsr a
+  sta dimension.collision.basepoint.y
+
+  lda.w #32
+  sta dimension.collision.diameter
+
+  lda.w #-64
+  sta this.relative.x
+
+  jsr iterator.library.reset
+  lda.w #sprite.rocket.CLS.PTR
+  jmp iterator.library.each.byId
+
+
+_explode:
+    AX16
+    lda.w #AUDIO.EFFECT.ROCKET_EXPLOSION
+    jsr interface.dimension.playSoundEffect
+
+    lda.w #SPRITE.BOSS.STATE.EXPLODING
+    sta this.state
+
+    pea 0
+    pea 3
+    pea SPRITE.effect.explosion.small.PTR
+    pei (dimension.position.y+1)
+    pei (dimension.position.x+1)
+    NEW_TRY sprite.once.CLS.PTR VOID
+    pla
+    pla
+    pla
+    pla
+    pla
+    rts
+
+  METHOD pause
+  jmp sprite.library.pauseAnimation
+
+  METHOD play
+  inc this.age
+  lda this.state
+  asl a
+  tax
+  jsr (_state.lut,x)
+  bcs +
+    jmp _kill
+
++
+  lda.w (GLOBAL.screen.position.x&$ffff)+1
+  clc
+  adc this.relative.x
+  sta dimension.position.x+1
+  jmp sprite.library.playAnimation
+
+_state.lut:
+  .dw _state.approaching
+  .dw _state.playing
+  .dw _state.exploding
+
+
+_state.approaching:
+  AX16
+  lda this.age
+  ror a
+  bcc +
+    inc this.relative.x
+    lda this.relative.x
+    cmp.w #-16
+    bne +
+      lda.w #OBJECT.PROPERTIES.isCollidable
+      tsb iterator.properties
+      inc this.state
+
++
+  sec
+  rts
+
+
+_state.exploding:
+  AX16  
+  lda animation.flags.static
+  bit.w #ANIMATION.FLAGS.IS_PLAYING
+    lda.w #AUDIO.EFFECT.MEOW_SUPER_LOW
+    jsr interface.dimension.playSoundEffect     
+    clc
+    rts
+
++
+  sec
+  rts
+
+_state.playing:
+  AX16
+  lda this.age
+  and.w #$ff
+  bne +
+    pea $800
+    pea 0
+    pea SPRITE.ENEMY.TYPE.MOVING.AIR.BULLET
+    pea 0
+    pea 0
+    lda dimension.position.y+1
+    clc
+    adc dimension.collision.basepoint.y
+    pha
+    pei (dimension.position.x+1)
+    NEW sprite.enemy.CLS.PTR VOID
+    pla
+    pla
+    pla
+    pla
+    pla
+    pla
+    pla
+
+    lda.w #AUDIO.EFFECT.MEOW_LOW
+    jsr interface.dimension.playSoundEffect    
+
++
+  lda this.age
+  and.w #$1f
+  bne +
+    ldx.w #iterator.target
+    jsr core.object.exists
+    bcc +
+      CALL sprite.rocket.getPosition.MTD iterator.target
+      sty this.target.y
+
++
+  lda this.target.y
+  cmp dimension.position.y+1
+  beq +
+  bcs ++
+    dec dimension.position.y+1
+    bra +
+
+++
+    inc dimension.position.y+1
+
++
+  lda dimension.position.x+1
+  cmp.w #727*8
+  bcc +
+    jsr _explode
+
++
+  sec
+  rts
+
+
+  METHOD kill
+  jmp sprite.library.kill 
+
+  CLASS sprite.boss
+.ends	
+	

@@ -1,0 +1,28 @@
+/**
+* Background layer file includes
+*
+*/
+
+.Section "BackgroundAnimationLUT" superfree
+BackgroundAnimationLUT:
+  PTRLONG BackgroundAnimationLUT BG.poem.bg.packed
+  PTRLONG BackgroundAnimationLUT BG.logo.bg.packed
+  PTRLONG BackgroundAnimationLUT BG.logo.packed
+  PTRLONG BackgroundAnimationLUT BG.vonLaser.packed
+  PTRLONG BackgroundAnimationLUT BG.overlay.packed
+  PTRLONG BackgroundAnimationLUT BG.game_over.packed
+  PTRLONG BackgroundAnimationLUT BG.game_over.text.packed
+  PTRLONG BackgroundAnimationLUT BG.ending.packed
+  PTRLONG BackgroundAnimationLUT BG.ending.text.packed
+
+.ends
+  BG_ANIMATION poem.bg.packed gfx_bg_slightlylossy
+  BG_ANIMATION logo.bg.packed gfx_bg_lossy
+  BG_ANIMATION logo.packed gfx_bg_lowcol
+  BG_ANIMATION vonLaser.packed gfx_bg
+  BG_ANIMATION overlay.packed gfx_status
+  BG_ANIMATION game_over.packed gfx_bg_lossy
+  BG_ANIMATION game_over.text.packed gfx_status
+  BG_ANIMATION ending.packed gfx_bg_lowcol
+  BG_ANIMATION ending.text.packed gfx_status
+  

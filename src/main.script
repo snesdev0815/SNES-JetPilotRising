@@ -1,0 +1,16 @@
+/**
+* Main flow control
+*
+*/
+
+  SCRIPT main
+
+.if DEBUG == 1
+  ;execute unit tests
+  SCRIPT_NEW Unit_test.CLS.PTR hashPtr.1
+  SCRIPT_CALL Unit_test.kill.MTD hashPtr.1
+.endif
+
+  SCRIPT_NEW Script.CLS.PTR VOID disclaimer
+
+  DIE

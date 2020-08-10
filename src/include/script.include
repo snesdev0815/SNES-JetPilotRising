@@ -1,0 +1,14 @@
+/**
+* Sequence scripting file includes
+*
+*/
+
+.include "src/disclaimer.script"
+.include "src/ending.script"
+.include "src/gameover.script"
+.include "src/intro.script"
+.include "src/game.script"
+.include "src/main.script"
+.include "src/none.script"
+.include "src/titlescreen.script"
+.include "src/exit.script"

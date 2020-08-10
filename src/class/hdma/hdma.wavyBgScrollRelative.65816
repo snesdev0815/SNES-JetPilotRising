@@ -1,0 +1,197 @@
+/**
+* hdma object that applies wavy scroll animation effect on scroll register of a bg
+* 
+*/
+.include "src/class/hdma/hdma.wavyBgScrollRelative.h"
+.section "hdma.wavyBgScrollRelative"
+
+  /**
+  * @param arg.1 <int, 16bit>    target animation id
+  * @param arg.2 <int, 16bit>    target register
+  * @param arg.3 <int, 16bit>    delay (0=fastest)
+  */
+  METHOD init
+  lda OBJECT.CALL.ARG.2,s ;BG1HOFS - BG4VOFS
+  cmp.w #BG1HOFS
+  bcs +
+    pha
+    TRIGGER_ERROR E_ValueError
+
++
+  cmp.w #BG4VOFS+1
+  bcc +
+    pha
+    TRIGGER_ERROR E_ValueError
+
++
+  sep #$20
+  sta hdma.target
+
+  rep #$31
+
+  lda OBJECT.CALL.ARG.3,s
+  sta hdma.animation.speed
+
+
+  lda #LOGO_ZOOM.VALUE_TABLE.LENGTH_TOTAL
+  sta hdma.ramBuffer.length
+  jsr hdma.library.allocateBuffer
+
+
+  lda.w #GLOBAL.wramBuffer.start
+  clc
+  adc hdma.ramBuffer.start
+  tax
+  sep #$20
+  lda #RAM
+  jsr hdma.library.setTableAdress
+
+  lda hdma.flags
+  ora #(DMAP_1_REG_WRITE_TWICE | DMAP_HDMA_INDIRECT_MODE)
+  sta hdma.flags
+
+  lda.b #RAM
+  sta hdma.indirect.bank
+
+  jsr _initTableNew
+  jsr hdma.library.start
+  rep #$31
+  stz this.tablePointer
+  rts
+
+  METHOD play
+  jsr _updateTable
+  inc hdma.animation.timer
+  lda hdma.animation.speed
+  and hdma.animation.timer
+  and.w #$ff
+  bne +
+    jsr _updateTable2
+
++    
+  rts
+
+  METHOD kill
+  jsr hdma.library.stop
+  jsr hdma.library.deallocateBuffer
+  jmp object.library.kill
+
+_updateTable:
+  AX16
+  lda hdma.target
+  and.w #$ff
+  sec
+  sbc.w #BG1HOFS & $ff
+  asl a
+  tax
+  lda.w xScrollBG1,x
+  pha ;current register valiue
+  ldy.w #0
+  ldx hdma.ramBuffer.start
+
+- 
+    phx
+    tya
+    and.w #LOGO_ZOOM.VALUE_TABLE-1
+    asl a
+    tax
+    lda.l wavyBgScroll.lut.mist,x
+    plx
+    clc
+    adc.w #8
+    clc
+    adc 1,s
+    sta.w (GLOBAL.wramBuffer.start&$ffff) + LOGO_ZOOM.VALUE_TABLE,x
+    inx
+    inx
+    iny
+    cpy.w #LOGO_ZOOM.VALUE_TABLE.LENGTH
+    bne -
+
+
+  pla
+  rts
+
+
+_updateTable2:
+  php
+  rep #$31
+  pha
+
+  lda this.tablePointer
+  sta 1,s
+  asl a
+  clc
+  adc 1,s
+  clc
+  adc hdma.ramBuffer.start
+  clc
+  adc #GLOBAL.wramBuffer.start
+  tax
+  lda #RAM
+  jsr hdma.library.setTableAdress
+  jsr hdma.library.makePhysical
+
+  inc this.tablePointer
+  lda this.tablePointer
+  cmp #LOGO_ZOOM.VALUE_TABLE.LENGTH
+  bne +
+    stz this.tablePointer
+
++
+  pla
+  plp
+  rts
+
+
+
+_initTableNew:
+  php
+  rep #$31
+  lda hdma.ramBuffer.start
+  clc
+  adc.w #(GLOBAL.wramBuffer.start&$ffff) + LOGO_ZOOM.VALUE_TABLE
+  pha
+  pea $30
+
+  lda #$2a0
+  clc
+  adc hdma.ramBuffer.start
+  sta this.tableEnd
+  ldx hdma.ramBuffer.start
+
+- lda #2
+  sta.w GLOBAL.wramBuffer.start,x
+  inx
+
+  lda 1,s
+  dec a
+  and.w #LOGO_ZOOM.VALUE_TABLE.LENGTH-1
+  sta 1,s
+  asl a
+  clc
+  adc 3,s
+  sta.w GLOBAL.wramBuffer.start,x
+
+  inx
+  inx
+  cpx this.tableEnd
+  bne -
+
+  ;terminate table
+  stz.w GLOBAL.wramBuffer.start,x
+
+  pla
+  pla
+  plp
+  rts
+
+  METHOD disable
+  jmp hdma.library.disable
+
+  METHOD enable
+  jmp hdma.library.enable
+
+  CLASS hdma.wavyBgScrollRelative
+.ends	
+	

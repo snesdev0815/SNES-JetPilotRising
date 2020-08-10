@@ -1,0 +1,1242 @@
+/**
+* Helper functions to detect inter-object bounding-box/circle/point collision
+*
+*/
+
+
+.include "src/class/collision/collision.library.h"
+.section "collision"
+
+/*
+  METHOD init
+  METHOD play
+  METHOD kill
+  ;rep #$31
+  TRIGGER_ERROR E_abstractClass
+*/
+  ;rts
+
+
+/**
+* searches for next object box colliding with caller objects center point. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object properties (@see OBJID.[]). Object must satisfy requested properties to trigger match
+* @return c<bool>   true if collision occured
+*/
+/*
+collision.library.fromCenterPoint.toBox.byProperties:
+  AX16
+  sta iterator.sort.target
+    
+  ;push current objects center on stack
+  jsr sprite.library.getCenter
+  phx
+  phy
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    ;jsr iterator.library.each.byProperties
+    jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;source.x >= target.x && (target.x+target.width) >= source.x &&
+      ;source.y >= target.y && (target.y+target.height) >= source.y
+      lda.b 5,s
+      cmp.b dimension.position.x + 1
+      bcc +
+
+      lda.b dimension.position.x + 1
+      clc
+      adc.b dimension.size.x
+      cmp 5,s
+      bcc +
+
+      lda.b 3,s
+      cmp.b dimension.position.y + 1
+      bcc +
+
+      lda.b dimension.position.y + 1
+      clc
+      adc.b dimension.size.y
+      cmp 3,s
+      bcc +
+        ;collision detected
+        pld
+        ply
+        plx
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+
+  ply
+  plx
+  clc
+  rts
+*/
+
+/**
+* searches for next object colliding with point, but with 8x8 tile granularity. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object properties (@see OBJID.[]). Object must satisfy requested properties to trigger match
+* @param x<int, 16bit>  source point x
+* @param y<int, 16bit>  source point y
+* @return c<bool>   true if collision occured
+*/
+/*
+collision.library.fromRadius.toRadius.byProperties:
+  php
+  
+  rep #$31
+  sta iterator.sort.target
+  
+  ;push own position
+  phx
+  phy
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    ;jsr iterator.library.each.byProperties
+    jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;own and target position roughly identical?
+      lda.b dimension.position.x + 1
+      clc
+      adc dimension.collision.basepoint.x
+      sbc 5,s
+      jsr core.math.abs
+      cmp #16
+      bcs +
+
+      lda.b dimension.position.y + 1
+      clc
+      adc dimension.collision.basepoint.y
+      sbc 3,s
+      jsr core.math.abs
+      cmp #16
+      bcs +
+
+        ;collision detected
+        pld
+        ply
+        plx
+        plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+
+  ply
+  plx
+  plp
+  clc
+  rts
+*/
+
+/**
+* searches for next object box colliding with point. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object properties (@see OBJID.[]). Object must satisfy requested properties to trigger match
+* @param x<int, 16bit>  source point x
+* @param y<int, 16bit>  source point y
+* @return c<bool>   true if collision occured
+*/
+/*
+collision.library.fromPoint.toBox.byProperties:
+  AX16
+  ;php
+  
+  ;rep #$31
+  sta iterator.sort.target
+    
+  phx
+  phy
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    ;jsr iterator.library.each.byProperties
+    jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;source.x >= target.x && (target.x+target.width) >= source.x &&
+      ;source.y >= target.y && (target.y+target.height) >= source.y
+      lda.b 5,s
+      cmp.b dimension.position.x + 1
+      bcc +
+
+      lda.b dimension.position.x + 1
+      clc
+      adc.b dimension.size.x
+      cmp 5,s
+      bcc +
+
+      lda.b 3,s
+      cmp.b dimension.position.y + 1
+      bcc +
+
+      lda.b dimension.position.y + 1
+      clc
+      adc.b dimension.size.y
+      cmp 3,s
+      bcc +
+        ;collision detected
+        pld
+        ply
+        plx
+        ;plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+
+  ply
+  plx
+  ;plp
+  clc
+  rts
+*/
+
+/**
+* searches for next object box colliding with point. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object id (@see OBJID.[]).
+* @param x<int, 16bit>  source point x
+* @param y<int, 16bit>  source point y
+* @return c<bool>   true if collision occured
+*/
+
+collision.library.fromPoint.toBox.byId:
+  AX16
+  ;php
+  
+  ;rep #$31
+  sta iterator.sort.target
+    
+  phx
+  phy
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    jsr iterator.library.each.byId
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;source.x >= target.x && (target.x+target.width) >= source.x &&
+      ;source.y >= target.y && (target.y+target.height) >= source.y
+      lda.b 5,s
+      cmp.b dimension.position.x + 1
+      bcc +
+
+      lda.b dimension.position.x + 1
+      clc
+      adc.b dimension.size.x
+      cmp 5,s
+      bcc +
+
+      lda.b 3,s
+      cmp.b dimension.position.y + 1
+      bcc +
+
+      lda.b dimension.position.y + 1
+      clc
+      adc.b dimension.size.y
+      cmp 3,s
+      bcc +
+        ;collision detected
+        pld
+        ply
+        plx
+        ;plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+
+  ply
+  plx
+  ;plp
+  clc
+  rts
+
+  
+/**
+* searches for next object box colliding with caller objects box. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object properties (@see OBJID.[]). Object must satisfy requested properties to trigger match
+* @return c<bool>   true if collision occured
+*/
+collision.library.fromBox.toBox.byProperties:
+  AX16
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.size.x
+  lsr a
+  clc
+  adc dimension.position.x +1
+  pha
+
+  lda dimension.size.y
+  lsr a
+  clc
+  adc dimension.position.y +1
+  pha
+
+  pei (dimension.size.x)
+  pei (dimension.size.y)
+  pea 0 ;tmp
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    ;jsr iterator.library.each.byProperties
+    jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;((a.width + b.width) >= abs(a.x - b.x) * 2) &&
+      ;((a.height + b.height) >= abs(a.y - b.y) * 2)
+      lda dimension.size.x  ;get center coordinate
+      lsr a
+      clc
+      adc dimension.position.x +1
+
+      sec  ;abs(a.x - b.x) * 2)
+      sbc 11,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+
+      lda 7,s   ;(a.width + b.width)
+      clc
+      adc dimension.size.x
+      cmp 3,s
+      bcc +
+
+      lda dimension.size.y  ;get center coordinate
+      lsr a
+      clc
+      adc dimension.position.y +1
+
+      sec  ;abs(a.y - b.y) * 2)
+      sbc 9,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+      
+      lda 5,s
+      clc
+      adc dimension.size.y
+      cmp 3,s
+      bcc +
+        ;collision detected
+        pld
+        pla
+
+        pla
+        pla
+        pla
+        pla
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+  pla
+
+  pla
+  pla
+  pla
+  pla
+  clc
+  rts
+
+/**
+* searches for next object box colliding with caller objects box. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object id
+* @return c<bool>   true if collision occured
+*/
+/*
+collision.library.fromBox.toBox.byId:
+  php
+  
+  rep #$31
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.size.x
+  lsr a
+  clc
+  adc dimension.position.x +1
+  pha
+
+  lda dimension.size.y
+  lsr a
+  clc
+  adc dimension.position.y +1
+  pha
+
+  pei (dimension.size.x)
+  pei (dimension.size.y)
+  pea 0 ;tmp
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    jsr iterator.library.each.byId
+    ;jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;((a.width + b.width) >= abs(a.x - b.x) * 2) &&
+      ;((a.height + b.height) >= abs(a.y - b.y) * 2)
+      lda dimension.size.x  ;get center coordinate
+      lsr a
+      clc
+      adc dimension.position.x +1
+
+      sec  ;abs(a.x - b.x) * 2)
+      sbc 11,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+
+      lda 7,s   ;(a.width + b.width)
+      clc
+      adc dimension.size.x
+      cmp 3,s
+      bcc +
+
+      lda dimension.size.y  ;get center coordinate
+      lsr a
+      clc
+      adc dimension.position.y +1
+
+      sec  ;abs(a.y - b.y) * 2)
+      sbc 9,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+      
+      lda 5,s
+      clc
+      adc dimension.size.y
+      cmp 3,s
+      bcc +
+
+
+        ;collision detected
+        pld
+        pla
+
+        pla
+        pla
+        pla
+        pla
+        plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+  pla
+
+  pla
+  pla
+  pla
+  pla
+  plp
+  clc
+  rts
+*/
+
+/*
+collision.library.fromBox.toDiameter.byId:
+  AX16
+  ;php
+  
+  ;rep #$31
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.size.x
+  lsr a
+  clc
+  adc dimension.position.x +1
+  pha
+
+  lda dimension.size.y
+  lsr a
+  clc
+  adc dimension.position.y +1
+  pha
+
+  pei (dimension.size.x)
+  pei (dimension.size.y)
+  pea 0 ;tmp
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    jsr iterator.library.each.byId
+    ;jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;((a.width + b.width) >= abs(a.x - b.x) * 2) &&
+      ;((a.height + b.height) >= abs(a.y - b.y) * 2)
+      lda dimension.position.x+1
+      clc
+      adc dimension.collision.basepoint.x
+
+      sec  ;abs(a.x - b.x) * 2)
+      sbc 11,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+
+      lda 7,s   ;(a.width + b.width)
+      clc
+      ;adc dimension.size.x
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+      lda dimension.position.y+1
+      clc
+      adc dimension.collision.basepoint.y
+
+      sec  ;abs(a.y - b.y) * 2)
+      sbc 9,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+      
+      lda 5,s
+      clc
+      ;adc dimension.size.y
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+
+        ;collision detected
+        pld
+        pla
+
+        pla
+        pla
+        pla
+        pla
+        ;plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+  pla
+
+  pla
+  pla
+  pla
+  pla
+  ;plp
+  clc
+  rts
+*/
+/*
+collision.library.fromDiameter.toDiameter.noReset:
+  AX16
+  pea iterator.library.others
+
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  pha
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  pha
+  pei (dimension.collision.diameter)
+  pei (dimension.collision.diameter)
+  pea 0 ;tmp
+  jmp _fromDiameter.toDiameter.noReset
+*/
+
+/**
+* searches for next object box colliding with caller objects box. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object properties (@see OBJID.[]). Object must satisfy requested properties to trigger match
+* @return c<bool>   true if collision occured
+*/
+collision.library.fromDiameter.toDiameter.byProperties:
+  AX16
+  pea iterator.library.others
+
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  pha
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  pha
+  pei (dimension.collision.diameter)
+  pei (dimension.collision.diameter)
+  pea 0 ;tmp
+  jmp _fromDiameter.toDiameter
+
+_fromDiameter.toDiameter:
+  jsr iterator.library.reset
+_fromDiameter.toDiameter.noReset:
+-   
+    lda 11,s
+    tax
+    lda iterator.sort.target
+    ;jsr iterator.library.each.byProperties
+    jsr core.subroutine.execute
+    ;jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      tcd
+
+      ;((a.width + b.width) >= abs(a.x - b.x) * 2) &&
+      ;((a.height + b.height) >= abs(a.y - b.y) * 2)
+      lda dimension.position.x+1
+      clc
+      adc dimension.collision.basepoint.x      
+
+      sec  ;abs(a.x - b.x) * 2)
+      sbc 11,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+
+      lda 7,s   ;(a.width + b.width)
+      clc
+      ;adc dimension.size.x
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+      lda dimension.position.y+1
+      clc
+      adc dimension.collision.basepoint.y      
+
+      sec  ;abs(a.y - b.y) * 2)
+      sbc 9,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+      
+      lda 5,s
+      clc
+      ;adc dimension.size.y
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+
+        ;collision detected
+        pld
+        pla
+
+        pla
+        pla
+        pla
+        pla
+        pla
+        ;plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+  pla
+
+  pla
+  pla
+  pla
+  pla
+  pla
+  ;plp
+  clc
+  rts
+
+/*
+  AX16
+  ;php
+  
+  ;rep #$31
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  pha
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  pha
+  pei (dimension.collision.diameter)
+  pei (dimension.collision.diameter)
+  pea 0 ;tmp
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    ;jsr iterator.library.each.byProperties
+    jsr iterator.library.others
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;((a.width + b.width) >= abs(a.x - b.x) * 2) &&
+      ;((a.height + b.height) >= abs(a.y - b.y) * 2)
+      lda dimension.position.x+1
+      clc
+      adc dimension.collision.basepoint.x      
+
+      sec  ;abs(a.x - b.x) * 2)
+      sbc 11,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+
+      lda 7,s   ;(a.width + b.width)
+      clc
+      ;adc dimension.size.x
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+      lda dimension.position.y+1
+      clc
+      adc dimension.collision.basepoint.y      
+
+      sec  ;abs(a.y - b.y) * 2)
+      sbc 9,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+      
+      lda 5,s
+      clc
+      ;adc dimension.size.y
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+
+        ;collision detected
+        pld
+        pla
+
+        pla
+        pla
+        pla
+        pla
+        ;plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+  pla
+
+  pla
+  pla
+  pla
+  pla
+  ;plp
+  clc
+  rts  
+*/
+collision.library.fromAttackDiameter.toDiameter.byProperties:
+  AX16
+  ;lda dimension.collision.diameter
+  ;asl a
+  ;tay
+  pea iterator.library.others
+
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  pha
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  pha
+  lda dimension.direction
+  and.w #$3
+  asl a
+  tax
+  ;tya
+  lda dimension.collision.diameter
+  ;asl a
+  jsr (_amendAttackPosition.lut,x)
+  lda dimension.collision.diameter
+  asl a
+  asl a
+  pha
+  pha 
+  ;pei (dimension.collision.diameter)
+  ;pei (dimension.collision.diameter)
+  ;phy
+  ;phy
+  pea 0 ;tmp
+  jmp _fromDiameter.toDiameter.noReset
+
+_amendAttackPosition.lut:
+  .dw _amendAttackPosition.right
+  .dw _amendAttackPosition.left
+  .dw _amendAttackPosition.down
+  .dw _amendAttackPosition.up
+
+_amendAttackPosition.left:
+  eor.w #$ffff
+  inc a
+_amendAttackPosition.right:
+  clc
+  adc 3,s
+  sta 3,s
+  rts
+
+_amendAttackPosition.up:
+  eor.w #$ffff
+  inc a
+_amendAttackPosition.down:
+  clc
+  adc 5,s
+  sta 5,s
+  rts
+
+
+/**
+* searches for next object box colliding with caller objects box. if found, writes target object hash to iterator.target of callee
+* Requires participating object to implement interface dimension
+*
+* @param a<int, 16bit>  target object properties (@see OBJID.[]). Object must satisfy requested properties to trigger match
+* @return c<bool>   true if collision occured
+*/
+collision.library.fromDiameter.toDiameter.byId:
+  AX16
+  pea iterator.library.each.byId
+
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  pha
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  pha
+  pei (dimension.collision.diameter)
+  pei (dimension.collision.diameter)
+  pea 0 ;tmp
+  jmp _fromDiameter.toDiameter
+
+/*
+  AX16
+  ;php
+  
+  ;rep #$31
+  sta iterator.sort.target
+    
+  ;push current objects center and size on stack
+  lda dimension.position.x+1
+  clc
+  adc dimension.collision.basepoint.x
+  pha
+  lda dimension.position.y+1
+  clc
+  adc dimension.collision.basepoint.y
+  pha
+  pei (dimension.collision.diameter)
+  pei (dimension.collision.diameter)
+  pea 0 ;tmp
+  
+  ;find all matching objects and put them on the stack
+  jsr iterator.library.reset
+-   lda iterator.sort.target
+    ;jsr iterator.library.each.byProperties
+    jsr iterator.library.each.byId
+    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;((a.width + b.width) >= abs(a.x - b.x) * 2) &&
+      ;((a.height + b.height) >= abs(a.y - b.y) * 2)
+      lda dimension.position.x+1
+      clc
+      adc dimension.collision.basepoint.x      
+
+      sec  ;abs(a.x - b.x) * 2)
+      sbc 11,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+
+      lda 7,s   ;(a.width + b.width)
+      clc
+      ;adc dimension.size.x
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+      lda dimension.position.y+1
+      clc
+      adc dimension.collision.basepoint.y      
+
+      sec  ;abs(a.y - b.y) * 2)
+      sbc 9,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+      
+      lda 5,s
+      clc
+      ;adc dimension.size.y
+      adc dimension.collision.diameter
+      cmp 3,s
+      bcc +
+
+
+        ;collision detected
+        pld
+        pla
+
+        pla
+        pla
+        pla
+        pla
+        ;plp
+        sec
+        rts
+
++    
+    pld    
+    bra -
+
+++
+  pla
+
+  pla
+  pla
+  pla
+  pla
+  ;plp
+  clc
+  rts 
+*/
+
+/**
+* checks if target object box colliding with caller objects box.
+* Requires participating object to implement interface dimension
+*
+* @return c<bool>   true if collision occured
+*/
+/*
+collision.library.fromBox.toBox:
+  AX16
+  ;php
+      
+  ;push current objects center and size on stack
+  lda dimension.size.x
+  lsr a
+  clc
+  adc dimension.position.x +1
+  pha
+
+  lda dimension.size.y
+  lsr a
+  clc
+  adc dimension.position.y +1
+  pha
+
+  pei (dimension.size.x)
+  pei (dimension.size.y)
+  pea 0 ;tmp
+  
+  ;find all matching objects and put them on the stack
+
+  ldx #iterator.target
+  jsr core.object.exists    
+    bcc ++
+
+      ;we're in target namespace frame now
+      phd
+      lda iterator.target+3
+      INDEX_TO_HASH_POINTER
+      tax
+      lda.l OopStack.dp,x
+      pha
+      pld
+
+      ;((a.width + b.width) >= abs(a.x - b.x) * 2) &&
+      ;((a.height + b.height) >= abs(a.y - b.y) * 2)
+      lda dimension.size.x  ;get center coordinate
+      lsr a
+      clc
+      adc dimension.position.x +1
+
+      sec  ;abs(a.x - b.x) * 2)
+      sbc 11,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+
+      lda 7,s   ;(a.width + b.width)
+      clc
+      adc dimension.size.x
+      cmp 3,s
+      bcc +
+
+      lda dimension.size.y  ;get center coordinate
+      lsr a
+      clc
+      adc dimension.position.y +1
+
+      sec  ;abs(a.y - b.y) * 2)
+      sbc 9,s
+      bpl +++
+        eor.w #$ffff
+        inc a
+
++++
+      asl a
+      sta 3,s
+      
+      lda 5,s
+      clc
+      adc dimension.size.y
+      cmp 3,s
+      bcc +
+
+
+        ;collision detected
+        pld
+        pla
+
+        pla
+        pla
+        pla
+        pla
+        ;plp
+        sec
+        rts
+
++    
+    pld    
+
+++
+  pla
+
+  pla
+  pla
+  pla
+  pla
+  ;plp
+  clc
+  rts
+*/
+  
+  ;CLASS collision.library
+.ends
