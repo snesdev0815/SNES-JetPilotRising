@@ -43,10 +43,10 @@
 ;***********************************
 ; title screen
 ;***********************************
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.logo.packed.PTR 0 0 BG.LAYER.0
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer1 0 0 BG.logo.bg.packed.PTR 0 0 BG.LAYER.1
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer0 0 0 BG.logo.packed.PTR 0 0 BG.LAYER.0
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer1 0 0 BG.logo.bg.packed.PTR 0 0 BG.LAYER.1
   
-  SCRIPT_CALL Background.generic.setPosition.MTD obj.layer0 0 $1f0 0
+  SCRIPT_CALL background.generic.setPosition.MTD obj.layer0 0 $1f0 0
 
   SCRIPT_NEW hdma.brightness.CLS.PTR obj.brightnessGradient
 
@@ -79,7 +79,7 @@
 
 +  
 
-  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
-  SCRIPT_CALL Background.generic.kill.MTD obj.layer1
+  SCRIPT_CALL background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL background.generic.kill.MTD obj.layer1
   SCRIPT_NEW Script.CLS.PTR VOID game level.level1.PTR
   DIE

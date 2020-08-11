@@ -28,14 +28,14 @@
 
 ;external parameters
 .enum 0 export
-  Background.generic.parameter.pos.x db
-  Background.generic.parameter.pos.y db
-  Background.generic.parameter.animation.id db
-  Background.generic.parameter.animation.speed db
-  Background.generic.parameter.animation.flags db
-  Background.generic.parameter.layer db
-  Background.generic.parameter.size.x db
-  Background.generic.parameter.size.y db
+  background.generic.parameter.pos.x db
+  background.generic.parameter.pos.y db
+  background.generic.parameter.animation.id db
+  background.generic.parameter.animation.speed db
+  background.generic.parameter.animation.flags db
+  background.generic.parameter.layer db
+  background.generic.parameter.size.x db
+  background.generic.parameter.size.y db
 .ende
 
 .base BSL

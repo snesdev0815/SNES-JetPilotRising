@@ -1,8 +1,8 @@
 /**
 * palette rotator
 */
-.include "src/class/palette/Palette.rotate.h"
-.section "Palette.rotate"
+.include "src/class/palette/palette.rotate.h"
+.section "palette.rotate"
 
   /**
   * @param arg.1 <int, 16bit>    color start id
@@ -343,6 +343,6 @@ _rotatePalette:
   sta 3,s   
   rts
 
-  CLASS Palette.rotate
+  CLASS palette.rotate
 .ends	
 	

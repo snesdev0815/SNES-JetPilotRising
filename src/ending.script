@@ -97,8 +97,8 @@
 ;***********************************
 ; ending
 ;***********************************
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.ending.text.packed.PTR 0 ANIMATION.FLAGS.PRIORITY_MAX BG.LAYER.2
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer1 0 0 BG.ending.packed.PTR 0 0 BG.LAYER.1
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer0 0 0 BG.ending.text.packed.PTR 0 ANIMATION.FLAGS.PRIORITY_MAX BG.LAYER.2
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer1 0 0 BG.ending.packed.PTR 0 0 BG.LAYER.1
   
 
   lda #BRIGHTNESS.FULL

@@ -80,7 +80,7 @@
 ; intro scene 2, dieter von laser
 ;***********************************
 _intro.scene2:
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.vonLaser.packed.PTR 0 0 BG.LAYER.0
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer0 0 0 BG.vonLaser.packed.PTR 0 0 BG.LAYER.0
 
   lda #BRIGHTNESS.FULL
   SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
@@ -101,12 +101,12 @@ _intro.scene2:
 
 +
 
-  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL background.generic.kill.MTD obj.layer0
 
 ;***********************************
 ; intro scene 3, poem
 ;***********************************
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.poem.bg.packed.PTR 0 0 BG.LAYER.1
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer0 0 0 BG.poem.bg.packed.PTR 0 0 BG.LAYER.1
 
   SCRIPT_NEW_TRY background.textlayer.vwf.CLS.PTR obj.vwf $3000 BG.LAYER.2 0 0
 
@@ -173,13 +173,13 @@ _intro.scene2:
   lda #BRIGHTNESS.FULL
   SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
 
-  SCRIPT_CALL Background.generic.setPosition.MTD obj.layer0 0 (192 ~$ffff) 0
+  SCRIPT_CALL background.generic.setPosition.MTD obj.layer0 0 (192 ~$ffff) 0
 
   SAVE
 
   ;wait for some time while drawing text and scrolling cat bg
   LOOP 700
-    SCRIPT_CALL Background.generic.translate.MTD obj.layer0 0 40 0
+    SCRIPT_CALL background.generic.translate.MTD obj.layer0 0 40 0
   LOOP
 
   lda.w #BRIGHTNESS.NONE
@@ -193,7 +193,7 @@ _intro.scene2:
 
 +
 
-  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL background.generic.kill.MTD obj.layer0
   SCRIPT_CALL background.textlayer.vwf.kill.MTD obj.vwf
   SCRIPT_CALL vwf.parser.kill.MTD obj.parser
   SCRIPT_CALL hdma.brightness.kill.MTD obj.brightnessGradient
@@ -201,15 +201,15 @@ _intro.scene2:
 ;***********************************
 ; title screen
 ;***********************************
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.logo.packed.PTR 0 0 BG.LAYER.0
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer1 0 0 BG.logo.bg.packed.PTR 0 0 BG.LAYER.1  
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer0 0 0 BG.logo.packed.PTR 0 0 BG.LAYER.0
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer1 0 0 BG.logo.bg.packed.PTR 0 0 BG.LAYER.1  
 
   SCRIPT_NEW hdma.brightness.CLS.PTR obj.brightnessGradient
 
   lda #BRIGHTNESS.FULL
   SCRIPT_CALL Brightness.fadeTo.MTD obj.brightness
 
-  SCRIPT_CALL Background.generic.setPosition.MTD obj.layer0 0 (210 ~$ffff) 0
+  SCRIPT_CALL background.generic.setPosition.MTD obj.layer0 0 (210 ~$ffff) 0
 
 
   SLEEP 120
@@ -217,7 +217,7 @@ _intro.scene2:
 
   ;logo comes falling down
   LOOP 25
-    SCRIPT_CALL Background.generic.translate.MTD obj.layer0 0 2000 0
+    SCRIPT_CALL background.generic.translate.MTD obj.layer0 0 2000 0
   LOOP
 
   SCRIPT_NEW level.screen.shake.CLS.PTR VOID 0 0 0 0 $f 1
@@ -239,8 +239,8 @@ _intro.scene2:
 
 +
 
-  SCRIPT_CALL Background.generic.kill.MTD obj.layer0
-  SCRIPT_CALL Background.generic.kill.MTD obj.layer1
+  SCRIPT_CALL background.generic.kill.MTD obj.layer0
+  SCRIPT_CALL background.generic.kill.MTD obj.layer1
   SCRIPT_CALL hdma.brightness.kill.MTD obj.brightnessGradient
 
   jmp _intro.scene2

@@ -7,11 +7,11 @@
 * @param 2<int, 16bit>  animation id
 * @param 3<bool>  true if tile priority should be set
 */
-.include "src/class/background/Background.generic.scroll.h"
-.section "Background.generic.scroll"
+.include "src/class/background/background.generic.scroll.h"
+.section "background.generic.scroll"
 
   METHOD init
-  jmp Background.generic.init  
+  jmp background.generic.init  
   
   METHOD play
   jsr _updateScreenPosition
@@ -56,7 +56,7 @@
   jmp background.library.kill
 
   METHOD getAllocatedPalette
-  jmp Background.generic.getAllocatedPalette
+  jmp background.generic.getAllocatedPalette
 
 
 /**
@@ -218,6 +218,6 @@ _updateTilemap:
   pla
   rts
 
-  CLASS Background.generic.scroll getAllocatedPalette
+  CLASS background.generic.scroll getAllocatedPalette
 .ends	
 	

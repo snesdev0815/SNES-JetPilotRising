@@ -13,8 +13,8 @@ OBJID.Script  db
 OBJID.Unit_test db
 OBJID.Test_object db
 OBJID.Iterator_test db
-OBJID.Background.generic db
-OBJID.Background.generic.scroll db
+OBJID.background.generic db
+OBJID.background.generic.scroll db
 OBJID.background.level.layer db
 OBJID.Brightness db
 OBJID.fixedColor db
@@ -31,7 +31,7 @@ OBJID.LogoZoom db
 OBJID.vwf.renderer db
 OBJID.vwf.parser db
 OBJID.background.textlayer.vwf db
-OBJID.Palette.rotate db
+OBJID.palette.rotate db
 OBJID.Palette.fade db
 OBJID.palette.animation db
 OBJID.palette.bgcolor db
@@ -68,8 +68,8 @@ OopClassWordLut:
   PTRNORM OopClassWordLut Unit_test.CLS
   PTRNORM OopClassWordLut Test_object.CLS
   PTRNORM OopClassWordLut Iterator_test.CLS
-  PTRNORM OopClassWordLut Background.generic.CLS
-  PTRNORM OopClassWordLut Background.generic.scroll.CLS
+  PTRNORM OopClassWordLut background.generic.CLS
+  PTRNORM OopClassWordLut background.generic.scroll.CLS
   PTRNORM OopClassWordLut background.level.layer.CLS
   PTRNORM OopClassWordLut Brightness.CLS
   PTRNORM OopClassWordLut fixedColor.CLS
@@ -86,7 +86,7 @@ OopClassWordLut:
   PTRNORM OopClassWordLut vwf.renderer.CLS
   PTRNORM OopClassWordLut vwf.parser.CLS
   PTRNORM OopClassWordLut background.textlayer.vwf.CLS
-  PTRNORM OopClassWordLut Palette.rotate.CLS
+  PTRNORM OopClassWordLut palette.rotate.CLS
   PTRNORM OopClassWordLut Palette.fade.CLS
   PTRNORM OopClassWordLut palette.animation.CLS
   PTRNORM OopClassWordLut palette.bgcolor.CLS

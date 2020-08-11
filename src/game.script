@@ -57,9 +57,9 @@
 
   ;old film stock translucent overlay
   ;must be initialized before level because it clobbers decompression buffer (which is reused as layer metatile buffer)
-  SCRIPT_NEW Background.generic.CLS.PTR obj.layer0 0 0 BG.overlay.packed.PTR 0 ANIMATION.FLAGS.IS_SUBSCREEN BG.LAYER.2
+  SCRIPT_NEW background.generic.CLS.PTR obj.layer0 0 0 BG.overlay.packed.PTR 0 ANIMATION.FLAGS.IS_SUBSCREEN BG.LAYER.2
   SCRIPT_NEW Hdma.wavyLayer.CLS.PTR obj.hdmaWavyScroll BG.LAYER.2
-  SCRIPT_CALL Background.generic.getAllocatedPalette.MTD obj.layer0
+  SCRIPT_CALL background.generic.getAllocatedPalette.MTD obj.layer0
   pea 0
   tya
   lsr a
