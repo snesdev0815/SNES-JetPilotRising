@@ -657,7 +657,6 @@ vwf.library.getFontData:
 +
   ldy.w #VWF.PALETTE_ID
   lda.b [this.current.font.pointer], y
-sdafasdg:
   asl a
   asl a
   and.w #BG.PALETTE.BITS  

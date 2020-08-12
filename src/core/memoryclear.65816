@@ -61,6 +61,43 @@ MemClearLoop4:			;regs W12SEL-SETINI
 * @param y<16bit>	block size
 * @param x<16bit>	block adress
 */	
+/*
+ClearWRAM:
+	php
+	phx
+	phy
+	phb
+	pea (RAM | RAM << 8)
+	plb
+	plb
+    phx
+    rep #$31
+    and.w #$7   ;calculate adress of clear pattern word(8 entries max)
+    asl a
+    tax
+    lda.l ClearWramBytePatterns,x
+    sep #$20
+    plx
+
+ClearWRAMLoop:
+		sta.w 0,x
+		inx
+		dey
+		bne ClearWRAMLoop
+
+	plb
+	ply
+	plx
+	plp
+	rts
+*/
+/**
+* clear memory block in wram bank $7e (without dma)
+*
+* @param a<3bit>	clear pattern (@see ClearWramBytePatterns)
+* @param y<16bit>	block size
+* @param x<16bit>	block adress
+*/	
 ClearWRAM:
 	php
 	phx
@@ -121,7 +158,7 @@ ClearWRAM:
 +
 	;clear remainder in single byte steps
 	lda 4,s
-    and.w #$1f
+    	and.w #$1f
 	tay
 	beq +
 		sep #$20

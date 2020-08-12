@@ -116,7 +116,7 @@ _return:
 
 ;crappy hack for scripts, execute 24 bit callback
 core.callback.execute.long:
-	AX16
+    AX16
     inx
 
 ++  

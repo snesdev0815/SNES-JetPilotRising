@@ -1546,45 +1546,7 @@ _waitForEsc\@
 .endm
 
 
-;write item \@
-;params: name string_id inv_hp inv_pow inv_speed inv_stamrate INV_HSCOREMUL hp points
-.macro ITEM
-  .if NARGS != 9
-      .printt "Invalid parameter count in item macro\n."
-      .fail
-  .endif
-  .def ITEM.\1 (\@&$ff)
-  .export ITEM.\1
-  ITEM.\1.data:
-    .db (\@&$ff)  ;item id
-    .dw text.item.\2  ;label textstring id
-    .dw text.item.description_\2  ;description textstring id.
-    .db \3  ;inventory hp plus
-    .db \4  ;inventory power plus
-    .db \5  ;inventory speed plus
-    .db \6  ;inventory stamina rate plus
-    .db \7  ;inventory highscore multiplier plus
-    .db \8  ;immediate hp plus
-    .dw \9  ;immediate points plus
-    .db 0,0,0 ;padding
 
-.endm
-
-;write item parameters for hud inventory display
-;params: name animation pos_x pos_y
-.macro HUD_ITEM
-  .if NARGS != 6
-      .printt "Invalid parameter count in hud item macro\n."
-      .fail
-  .endif
-  HUD_ITEM.\1.data:
-    .dw \2  ;animation
-    .db \3  ;xpos
-    .db \4  ;ypos
-    .db \5  ;column
-    .db \6  ;row
-
-.endm
 
 .macro ACQUIRE_OBJECT
  SCRIPT_JSR iterator.library.reset

@@ -7,9 +7,6 @@
 .section "test_object"
 
   METHOD init
-  .ACCU 16
-  .INDEX 16
-  rep #$31
   cmp #789
   bne +
   lda OBJECT.CALL.ARG.1,s
@@ -47,9 +44,6 @@
 
 
   METHOD testParameterReturn
-  .ACCU 16
-  .INDEX 16
-  rep #$31
   cmp #7
   bne +
   lda OBJECT.CALL.ARG.1,s

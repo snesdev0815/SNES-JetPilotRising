@@ -42,23 +42,21 @@ MATH.GLOBAL.END ds 0
 .base BSL
 .bank BANK.DATA
 
-.section "math.lut.1" superfree
+.section "math.luts.sine" superfree
   FILEINC math.lut.sin "data/math/sine.lut"
 .ends
-
-.section "math.lut.2" superfree
+.section "math.luts.cosine" superfree
   FILEINC math.lut.cos "data/math/cosine.lut"
 .ends
-
-.section "math.lut.3" superfree
+.section "math.luts.tangent" superfree
   FILEINC math.lut.tan "data/math/tangent.lut"
 .ends
 
-.section "math.lut.4" superfree
+.section "math.luts.atan" superfree
   FILEINC math.lut.atan "data/math/atan.lut"
 .ends
 
-.section "math.lut.5" superfree
+.section "math.luts.atan2" superfree
   FILEINC math.lut.atan2 "data/math/atan2.lut"
 .ends
 

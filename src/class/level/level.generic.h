@@ -74,8 +74,6 @@
 
 .enum 0 export
   LEVEL.MODE.NORMAL db
-  LEVEL.MODE.MARINE_POP db
-  LEVEL.MODE.SKY_POP db
 .ende
 
 .def LEVEL.AUTOSCROLL.SPEED.X $c0
@@ -89,8 +87,6 @@
 .export LEVEL.COLLISION.SLOPE.MASK
 .export LEVEL.COLLISION.ELEVATION.MASK
 
-;required for chimera, but causes trouble for all other platforms.
-;maybe have getElevation method on platforms?
 .def LEVEL.COLLISION.ELEVATION.PLATFORM $100
 .export LEVEL.COLLISION.ELEVATION.PLATFORM
 
@@ -100,8 +96,6 @@
 .ende
 
 .def LEVEL.FLAG.PLAYER.NO_COLOR_MATH 1 << 0
-
-
 
 .def LEVEL.MAGIC.VALUE $564c    ;"LV"
 

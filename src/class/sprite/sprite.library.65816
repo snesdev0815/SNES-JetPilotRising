@@ -262,9 +262,9 @@ sprite.library.restartAnimation:
 /**
 * start animation, allocate required memory
 *
-* @param a<int, 16bit>  animation id, @see SpriteAnimationLUT.
+* @param a<int, 16bit>	animation id, @see SpriteAnimationLUT.
 *
-* @return c<bool> true if init ok. could fail if no more vram space left or something like that.
+* @return c<bool>	true if init ok. could fail if no more vram space left or something like that.
 */
 sprite.library.startAnimation:
   AX16
@@ -513,8 +513,8 @@ _commitFrameData:
       lda.b animation.frame.current
       cmp.b animation.frame.last
       bne ++
-          jsr _doTilemapBig
-          jsr _doTilemapNormal  
+        jsr _doTilemapBig
+        jsr _doTilemapNormal
 
 ++      
       jmp _skipTileUpload
@@ -1092,7 +1092,7 @@ sprite.library.allocate.failsafe:
   lda animation.flags.static
   bit.w #ANIMATION.FLAGS.IS_COLOR_MATH
   beq +
-  ldx.w #PALETTE.START.SPRITE_COLORMATH
+	ldx.w #PALETTE.START.SPRITE_COLORMATH
 
 + 
   ;don't allocate again
@@ -1445,7 +1445,6 @@ extern.sprite.writeOamBuffer.nocheck:
   pha
 
   ldy.b oam.current.big.pointer
-
 
   txa   ;byte-sized hioam entries     
   lsr a

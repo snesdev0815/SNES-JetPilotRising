@@ -7,8 +7,6 @@
 .section "unit_test"
 
   METHOD init
-  rep #$31
-
   jsr _testObject
   bcs +
 	pea 3
@@ -57,7 +55,6 @@
 * set this.selfTest
 */
   METHOD setSelf
-  rep #$31
   sta.b this.selfTest
   rts
 
@@ -65,7 +62,7 @@
 * test if iterator.self actually points to itself and if methods can be invoked on it
 */
 _testSelf:
-  rep #$31
+  AX16
   lda.b iterator.self
   lda.b iterator.self+2
   lda.w #$5555
@@ -85,7 +82,7 @@ _testSelf:
 
   
 _testMultiplication:
-  rep #$31
+  AX16
   lda #0
   ldx #0
   jsr core.math.mul
@@ -118,7 +115,7 @@ _testMultiplication:
   rts
   
 _testDivision:
-  rep #$31
+  AX16
   ldx #1
   lda #1
   jsr core.math.div
@@ -151,7 +148,7 @@ _testDivision:
   rts
   
 _testModulo:
-  rep #$31
+  AX16
   lda #50
   ldx #44
   jsr core.math.mod
@@ -181,7 +178,7 @@ _testModulo:
 * test if iterator actually finds something
 */
 _testIterator:
-  rep #$31
+  AX16
   NEW Iterator_test.CLS.PTR hashPtr.2
   NEW Iterator_test.CLS.PTR hashPtr.3
 
@@ -250,7 +247,7 @@ _testIteratorFail:
 
 
 _testObject:
-  rep #$31
+  AX16
   pea 6
   pea 5
 
@@ -290,7 +287,7 @@ _testObjectCarryClear:
   rts
 
 _testPause:
-  rep #$31
+  AX16
   pea 6
   pea 5
 
@@ -463,8 +460,7 @@ _allocateCgramFail:
 ;just a static screen test for now.
 ;@todo: has to be adapted for variable screen position/size later on
 _testScreen:
-  php
-  rep #$31
+  AX16
   ldx.w #0
   ldy.w #0
   jsr core.screen.convertAbsoluteToScreen
@@ -488,13 +484,11 @@ _testScreen:
   jsr core.screen.convertAbsoluteToScreen
   bcs _testScreenFail
 
-  plp
   sec
   rts
   
 
 _testScreenFail:
-  plp
   clc
   rts
 

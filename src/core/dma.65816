@@ -104,7 +104,7 @@ core.dma.registerTransfer:
   bne +
   ;zero length transfer encountered, abort.
   pha
-  SCRIPT_TRIGGER_ERROR E_InvalidDmaTransferLength
+    SCRIPT_TRIGGER_ERROR E_InvalidDmaTransferLength
 
 
 + sta.w GLOBAL.dmaQueue.1.transferLength,x  

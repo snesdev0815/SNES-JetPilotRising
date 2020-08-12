@@ -21,7 +21,7 @@
 .define CLASS.ZP_LENGTH zpLen
 
 .base BSL
-.bank 0 slot 0
+.bank BANK.PROGRAM
 
 
 

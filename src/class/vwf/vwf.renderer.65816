@@ -85,7 +85,6 @@ vwf.renderer.init:
   stz.b this.state
   stz.b this.wram.buffer.index
 
-saofdjsajfdlka:
   ldy.w #VWF.TILE_WIDTH
   lda.b [this.font.pointer], y
   ;get tile width
@@ -311,6 +310,7 @@ _render:
 
   pla
   jmp _flushBuffer
+
 _shiftLUT.8x8:
   .dw _shift8+7
   .dw _shift8+6

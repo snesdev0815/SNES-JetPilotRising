@@ -10,7 +10,6 @@
 * @param 6<int, 16bit>  player target x-pos
 * @param 7<int, 16bit>  player target y-pos
 */
-
 .include "src/class/level/level.exit.h"
 .section "level.exit"
 

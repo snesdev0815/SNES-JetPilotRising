@@ -5,7 +5,6 @@
 *
 * @param 1<int, 8bit>  level number
 */
-
 .include "src/class/level/level.generic.h"
 .section "level.generic"
 
@@ -1078,13 +1077,7 @@ _killChildren:
 
 +
 .endif    
-
-
   rts
-
-
-
-
 
 
 /**
